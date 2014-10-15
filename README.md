@@ -1,13 +1,12 @@
-rna-seq-qc
-==========
+rna-seq-qc v0.12
+================
 
 RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
 Fabian Kilpert, 10-13-2014
-email: kilpert@ie-freiburg.mpg.de
----------------------------------
 
 This software is distributed WITHOUT ANY WARRANTY!
+--------------------------------------------------
 
 Following steps are executed in succession: FASTQ subsampling (optiona), quality check
 with FASTQC, trimming of reads with Trim Galore (optional), estimation of insert size
@@ -29,7 +28,10 @@ The DE analysis is only executed if a valid setup table is provided
 (e.g. --DE setup_table.tsv), which defines the relationships of the samples.
 
 More information on the pipeline can be found on the wiki page:
-http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
+    http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
+
+rna-seq-qc is available at GitHub:
+    https://github.com/kilpert/rna-seq-qc
 
 Example:
   python rna-seq-qc.py -d /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
