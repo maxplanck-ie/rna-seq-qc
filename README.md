@@ -27,9 +27,6 @@ works for single end and paired end sequences alike.
 The DE analysis is only executed if a valid setup table is provided
 (e.g. --DE setup_table.tsv), which defines the relationships of the samples.
 
-More information on the pipeline can be found on the wiki page:
-    http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
-
 rna-seq-qc is available at GitHub:
     https://github.com/kilpert/rna-seq-qc
 
