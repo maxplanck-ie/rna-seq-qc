@@ -197,7 +197,7 @@ def parse_args():
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
     parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '--stringency 2')", type=str, default="--stringency 2")
-    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="")     #--library-type fr-firststrand
+    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="--max-multihits 1")     #--library-type fr-firststrand
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast')", type=str, default="--end-to-end --fast")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '')", type=str, default="-Q 10")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string", type=str, default="--mode union")
