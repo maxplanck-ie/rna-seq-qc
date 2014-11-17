@@ -1,8 +1,8 @@
 #!/usr/local/bin/python
 
 __description__ = """
-    rna-seq-qc v0.12
-    Fabian Kilpert, 10-13-2014
+    rna-seq-qc v0.2
+    Fabian Kilpert, 11-14-2014
     email: kilpert@ie-freiburg.mpg.de
     ---------------------------------
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
@@ -16,7 +16,7 @@ __description__ = """
     analysis with DESeq2 (optional).
 
     The pipeline requires gzipped FASTQ files (.fastq.gz) for input, which are loaded
-    from an input directory (-d INDIR). Read files belonging together require the exact same
+    from an input directory (-i INDIR). Read files belonging together require the exact same
     base name but ending either in "_R1" or "_R2" right in front of the .fastq.gz extension.
     (e.g. reads_R1.fastq.gz, reads_R2.fastq.gz). In addition, a specific genome version argument
     must be provided (e.g. -g mm10) to define the reference data used for annotation.
@@ -52,11 +52,55 @@ import textwrap
 from threading import Thread
 import time
 
-########################################################################################################################
-## for pc196 (developer) only!
-########################################################################################################################
-#print socket.gethostname()
+#### Development settins ######################################################
+
 if socket.gethostname() == "pc196":
+
+    # mm10
+
+    # ## SE500
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir500_SE',
+    #             '--fastq-downsample', '500',
+    #             '-g', 'mm10',
+    #             '--trim',
+    #             '-v',
+    #             '--insert-metrics', 'Picard',
+    #             ]
+
+    # ## PE500
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir500_SE',
+    #             '--fastq-downsample', '500',
+    #             '-g', 'mm10',
+    #             '--trim',
+    #             '-v',
+    #             '--insert-metrics', 'Picard',
+    #             ]
+
+    ## SE1500000
+    sys.argv = [sys.argv[0],
+                '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+                '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir1500000_SE',
+                '--fastq-downsample', '1500000',
+                '-g', 'mm10',
+                '--trim',
+                '-v',
+                '--insert-metrics', 'Picard',
+                ]
+
+    # ## PE1500000
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir1500000_SE',
+    #             '--fastq-downsample', '1500000',
+    #             '-g', 'mm10',
+    #             '--trim',
+    #             '-v',
+    #             '--insert-metrics', 'Picard',
+    #             ]
 
     # 2_samples
     # sys.argv = [sys.argv[0],
@@ -67,57 +111,12 @@ if socket.gethostname() == "pc196":
 
     # ## 140731_MiSeq_Ausma
     # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/140731_MiSeq_Ausma',
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/140731_MiSeq_Ausma',
     #             '-o', '140731_MiSeq_Ausma',
+    #             '--fastq-downsample', '2000000',
     #             '-g', 'mm10',
     #             '-v',
     #             '--DE', '/data/projects_2/kilpert/dev/rna-seq-pipeline/sampleInfo.tsv'
-    #             ]
-
-    ## SE500
-    # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir500_SE',
-    #             '--fastq-downsample', '400',
-    #             '-g', 'mm10',
-    #             #'--overwrite',
-    #             '-v',
-    #             #'--no-bam',
-    #             #'--no-trim',
-    #             #'--trim_galore', '-q 30'
-    #             '--count-prg', 'featureCounts'
-    #             ]
-
-    # ## PE500
-    # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/PE',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir500_PE',
-    #             '--fastq-downsample', '400',
-    #             '-g', 'mm10',
-    #             #'--overwrite',
-    #             '-v',
-    #             #'--no-bam',
-    #             #'--no-trim',
-    #             '--trim_galore', '-q 30',
-    #             #'--insert-metrics','Picard'
-    #             '--count-prg', 'featureCounts'
-    #             ]
-
-    ## PE full
-    # #/home/kilpert/git/rna-seq-pipeline/rna-seq-qc10.py -d /data/projects_2/kilpert/megumi/02_new/00_data -o /data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_PE_full -g mm10 -v
-    # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects_2/kilpert/megumi/02_new/00_data',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_PE_full',
-    #             '-g', 'mm10',
-    #             '-v'
-    #             ]
-
-    # ## SE full
-    # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects/kilpert/datasets/Bottomly',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_SE_full',
-    #             '-g', 'mm10',
-    #             '-v',
     #             ]
 
     if "--trim_galore" in sys.argv:
@@ -132,10 +131,11 @@ if socket.gethostname() == "pc196":
         print " ".join(sys.argv)   # output command line
 
 
-#### PATHS #############################################################################################################
+#### PATHS ####################################################################
 ## Path defaults to all needed scripts and programs
 
 bowtie2_path = "bowtie2"            #version 2.2.3
+bowtie2_build_path = "bowtie2-build"
 fastqc_path = "/package/FastQC_v0.11.2/fastqc"
 htseq_count_path = "/package/HTSeq-0.6.1/bin/htseq-count"
 picardtools_dir_path = "/package/picard-tools-1.121/"
@@ -149,19 +149,20 @@ deseq2_path = "rna-seq-qc/DESeq2.R"     # relative to main script
 
 ## Different configurations
 if socket.gethostname() == "pc196":
-    fastqc_path = "fastqc"
+    fastqc_path = "/home/kilpert/Software/bin/fastqc"
     htseq_count_path = "htseq-count"
     samtools_path = "samtools"
     tophat2_path = "tophat"
     rseqc_dir_path = ""
+    trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.3.7/trim_galore"
     ucsctools_dir_path = ""
 
 
 #### DEFAULT VARIABLES #################################################################################################
-default_processors = 2          # Total number of processors shared by all threads
+default_processors = 1          # Total number of processors shared by all threads
 default_threads = 1             # Number of threads for parallel file processing
 samtools_max_mem = 4
-if socket.gethostname() == "deep1":
+if socket.gethostname().startswith("deep"):
     default_processors = 20
     default_threads = 2
     samtools_max_mem = 20
@@ -188,7 +189,7 @@ def parse_args():
 
     ### Optional arguments
     parser.add_argument('--version', action='version', version='%(prog)s v0.12')
-    parser.add_argument("-d", "--input-dir", dest="indir", required=True, help="Input dir containing (FASTQ)")
+    parser.add_argument("-i", "--input-dir", dest="indir", required=True, help="Input dir containing (FASTQ)")
     parser.add_argument("-o", "--output-dir", dest="outdir", required=True, help="Output directory")
     parser.add_argument("--overwrite", dest="overwrite", action = "store_true", default=False, help="Overwrite results in existing folders!")
     parser.add_argument("-p", "--processors", dest="processors", metavar="INT", help="Maximum number of processors available shared by all threads (default: {}).format(default_processors)", type=int, default=default_processors)
@@ -205,7 +206,8 @@ def parse_args():
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: htseq-count (default) or featureCounts", type=str, default="featureCounts")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
-    parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
+    # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
+    parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads. Default: Using Trim Galore!")
     parser.add_argument("--DE", dest="sample_info", help="Information on samples (required for DE analysis)")
 
     ### Positional arguments (required!)
@@ -249,8 +251,8 @@ def parse_args():
     configs = parse_config(ref_cfg_file_path)
     try:
         args.fasta_index = configs["fasta_index"]
-        args.bowtie2_index = configs["bowtie2_index"]
-        args.tophat2_index = configs["tophat2_index"]
+        args.genome_index = configs["genome_index"]
+        args.transcriptome_index = configs["transcriptome_index"]
         args.gtf = configs["gtf"]
         args.bed = configs["bed"]
     except:
@@ -495,40 +497,48 @@ def downsample_fastq(infile, outfile, number=1000000, rnd=False, seed=None):
     RND mode reads the full input file into memory and applies a pseudo random selection.
     """
     if not rnd:
+        print "Downsampling from file head (non-random)"
         with gzip.open(infile, "r") as f1:
             with gzip.open(os.path.basename(outfile), "w") as f2:
                 f2.writelines(f1.readline() for i in xrange(number*4))      # Just grab the first n*4 lines from input files!!!
     else:
+        print "Random downsampling"
         lines = []
         with gzip.open(infile, "r") as f:
             for line in f:
                 line = line.strip()
                 lines.append(line)
         ##print "FASTQ reads:", len(lines)/4
-        fastq = []
-        for i in xrange(0, len(lines),4):
-            if not lines[i].startswith("@"):
-                print >> sys.stderr, "Error: Unusual SEQ-ID in line:" + i + "\n", lines[i]
-                exit(1)
-            if not lines[i+1]:
-                print >> sys.stderr, "Error: Empty line:" + i + "\n"
-                exit(1)
-            if not lines[i+2].startswith("+"):
-                print >> sys.stderr, "Error: Unusual line:" + i+2 + "\n", lines[i+2]
-                exit(1)
-            if not lines[i+3]:
-                print >> sys.stderr, "Error: Empty line:" + 3 + "\n"
-                exit(1)
-            fastq.append([lines[i], lines[i+1], lines[i+2], lines[i+3]])
-        if seed is not None:
-            random.seed(seed)
-        if seed:
-            print seed
-        downsample = random.sample(fastq, min(len(fastq),number))
-        with gzip.open(outfile, "w") as f:
-            for seq in downsample:
-                for line in seq:
-                    f.write(line+"\n")
+
+        if number > len(lines)/4:
+            print "Warning: Less reads ({}) in input file than requested ({}). Using entire data!".format(len(lines)/4, number)
+            shutil.copyfile(infile, outfile)
+            outfile = infile
+        else:
+            fastq = []
+            for i in xrange(0, len(lines),4):
+                if not lines[i].startswith("@"):
+                    print >> sys.stderr, "Error: Unusual SEQ-ID in line:" + i + "\n", lines[i]
+                    exit(1)
+                if not lines[i+1]:
+                    print >> sys.stderr, "Error: Empty line:" + i + "\n"
+                    exit(1)
+                if not lines[i+2].startswith("+"):
+                    print >> sys.stderr, "Error: Unusual line:" + i+2 + "\n", lines[i+2]
+                    exit(1)
+                if not lines[i+3]:
+                    print >> sys.stderr, "Error: Empty line:" + 3 + "\n"
+                    exit(1)
+                fastq.append([lines[i], lines[i+1], lines[i+2], lines[i+3]])
+            if seed is not None:
+                random.seed(seed)
+            ##if seed:
+            ##    print seed
+            downsample = random.sample(fastq, min(len(fastq),number))
+            with gzip.open(outfile, "w") as f:
+                for seq in downsample:
+                    for line in seq:
+                        f.write(line+"\n")
     if os.path.isfile(outfile):
         return outfile
 
@@ -543,7 +553,7 @@ def fastq_downsampling(args, indir):
     """
     analysis_name = "FASTQ_downsampling"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -589,7 +599,7 @@ def run_fastqc(args, q, indir):
     """
     analysis_name = "FastQC"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -633,7 +643,7 @@ def run_trim_galore(args, q, indir):
     """
     analysis_name = "Trim Galore"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name.replace(" ", "_"))
+    outdir = "{}".format(analysis_name.replace(" ", "_"))
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -656,9 +666,9 @@ def run_trim_galore(args, q, indir):
         for infile in infiles:
             if args.paired:
                 bname = re.sub("[1|2].fastq.gz$","",os.path.basename(infile[0]))
-                jobs = ["{} --paired --fastqc {} {} {}".format(trim_galore_path, re.sub("[\"|\']$","",args.trim_galore_opts), infile[0], infile[1]),
-                                "mv {}1_val_1.fq.gz {}1.fastq.gz".format(bname, bname),
-                                "mv {}2_val_2.fq.gz {}2.fastq.gz".format(bname, bname)]
+                jobs = ["{} --paired --fastqc {} {} {}".format(trim_galore_path, args.trim_galore_opts, infile[0], infile[1]),
+                                 "mv {}1_val_1.fq.gz {}1.fastq.gz".format(bname, bname),
+                                 "mv {}2_val_2.fq.gz {}2.fastq.gz".format(bname, bname)]
             else:
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
                 jobs = ["{} --fastqc {} {}".format(trim_galore_path, args.trim_galore_opts, infile),
@@ -686,7 +696,7 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
     """
     analysis_name = "strand_specificity_and_distance_metrics"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -704,7 +714,9 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
 
         print "In:", os.path.abspath(indir)
 
+        #######################################################################
         ## downsampling to 1000000 sequences
+        #######################################################################
         infiles = check_for_paired_infiles(args, indir, ".fastq.gz")
         if args.paired:
             for pair in infiles:
@@ -723,23 +735,30 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
                 print os.path.basename(infile)
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
                 #downsample_fastq(infile, "{}.downsampled.fastq.gz".format(bname), number=downsample_size, rnd=True, seed=args.seed)
-                downsample_fastq(infile, "{}.downsampled.fastq.gz".format(bname), number=downsample_size)
+                downsample_fastq(infile, "{}.downsampled.fastq.gz".format(bname), number=downsample_size, rnd=True, seed=args.seed)
             print "FASTQ file(s) downsampled\n".format(downsample_size)
             with open(logfile, "a+") as log:
                 #log.write("".join(map(lambda x: os.path.basename(x),infile))+"\n")
                 log.write(infile+"\n")
                 log.write("{} reads downsampled\n\n".format(downsample_size))
 
-        ## Bowtie2 mapping
+        #######################################################################
+        ## RSeQC infer_experiment (strand specificity) on reads mapped to the genome
+        #######################################################################
+
+        ## Bowtie2 mapping to genome
         infiles = check_for_paired_infiles(args, os.getcwd(), ".downsampled.fastq.gz")
         if args.paired:
             for pair in infiles:
                 bname = re.sub("_R*[1|2].downsampled.fastq.gz$","",os.path.basename(pair[0]))
-                cmd = "{} -x {} -1 {} -2 {} -p {} {} | {} view -Sb - | {} sort - {}.downsampled"\
-                        .format(bowtie2_path, args.bowtie2_index, pair[0], pair[1], max(1,int(args.processors/args.threads)), args.bowtie_opts,
+                cmd = "{} -x {} -1 {} -2 {} -p {} {} | {} view -Sb - | {} sort - {}.downsampled.genome_mapped"\
+                        .format(bowtie2_path, args.genome_index, pair[0], pair[1], max(1,int(args.processors/args.threads)), args.bowtie_opts,
                         samtools_path,
                         samtools_path, bname)
                 print cmd
+                with open(logfile, "a+") as log:
+                    log.write(cmd+"\n\n")
+                    time.sleep(0.1)
                 p = subprocess.check_call(cmd, shell=True)
                 if p:
                     print "Error! Bowtie2 closed unexpectedly."
@@ -747,76 +766,110 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
         else:
             for infile in infiles:
                 bname = re.sub(".downsampled.fastq.gz$","",os.path.basename(infile))
-                cmd = "{} -x {} -U {} -p {} {} | {} view -Sb - | {} sort - {}.downsampled"\
-                        .format(bowtie2_path, args.bowtie2_index, infile, max(1,int(args.processors/args.threads)), args.bowtie_opts,
+                cmd = "{} -x {} -U {} -p {} {} | {} view -Sb - | {} sort - {}.downsampled.genome_mapped"\
+                        .format(bowtie2_path, args.genome_index, infile, max(1,int(args.processors/args.threads)), args.bowtie_opts,
                         samtools_path,
                         samtools_path, bname)
                 print cmd
+                with open(logfile, "a+") as log:
+                    log.write(cmd+"\n\n")
+                    time.sleep(0.1)
                 p = subprocess.check_call(cmd, shell=True)
                 if p:
                     print "Error! Bowtie2 closed unexpectedly."
                     exit(1)
 
-        infiles = sorted([f for f in os.listdir(os.getcwd()) if f.endswith(".downsampled.bam")])
+        # RSeQC infer_experiment
 
-        ## RSeQC infer_experiment (strand specificity)
         if not os.path.isdir("infer_experiment"):
             os.mkdir("infer_experiment")
 
-            jobs = ["{} --version".format(os.path.join(rseqc_dir_path, "infer_experiment.py"))]
-            q.put(Qjob(jobs, shell=False, logfile="LOG"))
-            q.join()
+        jobs = ["{} --version".format(os.path.join(rseqc_dir_path, "infer_experiment.py"))]
+        q.put(Qjob(jobs, shell=False, logfile="LOG"))
+        q.join()
 
-            for infile in infiles:
-                jobs = ["{} -i {} -r {} > infer_experiment/{}".format(os.path.join(rseqc_dir_path, "infer_experiment.py"), infile, args.bed, re.sub(".bam$","",os.path.basename(infile))+".infer_experiment.txt")]
-                q.put(Qjob(jobs, shell=True, logfile="LOG"))
+        infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir)) if f.endswith(".genome_mapped.bam")])
+        for infile in infiles:
+            jobs = ["{} -i {} -r {} > infer_experiment/{}".format(os.path.join(rseqc_dir_path, "infer_experiment.py"), infile, args.bed, re.sub(".genome_mapped.bam$","",os.path.basename(infile))+".infer_experiment.txt")]
+            q.put(Qjob(jobs, shell=True, logfile="LOG"))
             time.sleep(0.1)
         q.join()
 
         ## Make settings file for TopHat
         for infile in infiles:
-            bname = re.sub(".downsampled.bam$","",os.path.basename(infile))
+            bname = re.sub(".downsampled.genome_mapped.bam$","",os.path.basename(infile))
+            print bname
             library_type = get_strand_from_rseqc("infer_experiment/{}.downsampled.infer_experiment.txt".format(bname), "tophat")
             with open("{}.TopHat2.txt".format(bname), "w") as f:
                 f.write("library-type\t{}\n".format(library_type))
 
+
+        #######################################################################
+        ## Inner distance (for paired reads only!)
+        #######################################################################
+
         if args.paired:
-            ## Picard
+
+            ## Bowtie2 mapping to transcriptome
+            infiles = check_for_paired_infiles(args, os.getcwd(), ".downsampled.fastq.gz")
+
+            for pair in infiles:
+                bname = re.sub("_R*[1|2].downsampled.fastq.gz$","",os.path.basename(pair[0]))
+                cmd = "{} -x {} -1 {} -2 {} -p {} {} | {} view -Sb - | {} sort - {}.downsampled.transcriptome_mapped"\
+                        .format(bowtie2_path, args.transcriptome_index, pair[0], pair[1], max(1,int(args.processors/args.threads)), args.bowtie_opts,
+                        samtools_path,
+                        samtools_path, bname)
+                print cmd
+                with open(logfile, "a+") as log:
+                    log.write(cmd+"\n\n")
+                    time.sleep(0.1)
+                p = subprocess.check_call(cmd, shell=True)
+                if p:
+                    print "Error! Bowtie2 closed unexpectedly."
+                    exit(1)
+
+            infiles = sorted([f for f in os.listdir(os.getcwd()) if f.endswith(".downsampled.transcriptome_mapped.bam")])
+
+            ###################################################################
+            ## Picard InsertSizeMetrics
+            ###################################################################
             if args.insert_metrics == "Picard":
 
                 ## Picard: CollectInsertSizeMetrics (mean, sd)
                 if not os.path.isdir("InsertSizeMetrics"):
                     os.mkdir("InsertSizeMetrics")
-                    for infile in infiles:
-                        bname = re.sub(".downsampled.bam$","",os.path.basename(infile))
-
-                        cmd = "java -jar -Xmx4g {}/CollectInsertSizeMetrics.jar INPUT={} OUTPUT=InsertSizeMetrics/{} HISTOGRAM_FILE=InsertSizeMetrics/{}".format(picardtools_dir_path, infile, bname+".InsertSizeMetrics.txt", bname+".histogram.pdf" )
-                        print cmd
-                        p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        stderrdata = p.stderr.read()
-                        print stderrdata
-                        with open(logfile, "a+") as log:
-                            log.write(cmd+"\n\n")
-                            log.write(stderrdata+"\n")
-                        p.wait()
-                ## CollectAlignmentSummaryMetrics (mean read length)
-                if not os.path.isdir("AlignmentSummaryMetrics"):
-                    os.mkdir("AlignmentSummaryMetrics")
-                    for infile in infiles:
-                        bname = re.sub(".downsampled.bam$","",os.path.basename(infile))
-
-                        cmd = "java -jar -Xmx4g {}/CollectAlignmentSummaryMetrics.jar INPUT={} OUTPUT=AlignmentSummaryMetrics/{}".format(picardtools_dir_path, infile, bname+".AlignmentSummaryMetrics.txt" )
-                        print cmd
-                        p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                        stderrdata = p.stderr.read()
-                        print stderrdata
-                        with open(logfile, "a+") as log:
-                            log.write(cmd+"\n\n")
-                            log.write(stderrdata+"\n")
-                        p.wait()
 
                 for infile in infiles:
-                    bname = re.sub(".downsampled.bam$","",os.path.basename(infile))
+                    bname = re.sub(".downsampled.transcriptome_mapped.bam$","",os.path.basename(infile))
+
+                    cmd = "java -jar -Xmx4g {} INPUT={} OUTPUT=InsertSizeMetrics/{} HISTOGRAM_FILE=InsertSizeMetrics/{}".format( os.path.join(picardtools_dir_path, "CollectInsertSizeMetrics.jar"), infile, bname+".InsertSizeMetrics.txt", bname+".histogram.pdf" )
+                    print cmd
+                    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    stderrdata = p.stderr.read()
+                    print stderrdata
+                    with open(logfile, "a+") as log:
+                        log.write(cmd+"\n\n")
+                        log.write(stderrdata+"\n")
+                    p.wait()
+
+                    ## CollectAlignmentSummaryMetrics (mean read length)
+                    if not os.path.isdir("AlignmentSummaryMetrics"):
+                        os.mkdir("AlignmentSummaryMetrics")
+                        for infile in infiles:
+                            bname = re.sub(".downsampled.transcriptome_mapped.bam$","",os.path.basename(infile))
+
+                            cmd = "java -jar -Xmx4g {} INPUT={} OUTPUT=AlignmentSummaryMetrics/{}".format( os.path.join(picardtools_dir_path, "CollectAlignmentSummaryMetrics.jar"), infile, bname+".AlignmentSummaryMetrics.txt" )
+                            print cmd
+                            p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            stderrdata = p.stderr.read()
+                            print stderrdata
+                            with open(logfile, "a+") as log:
+                                log.write(cmd+"\n\n")
+                                log.write(stderrdata+"\n")
+                            p.wait()
+
+                for infile in infiles:
+                    bname = re.sub(".downsampled.transcriptome_mapped.bam$","",os.path.basename(infile))
 
                     with open("InsertSizeMetrics/{}.InsertSizeMetrics.txt".format(bname), "r") as f:
                         metrics = f.readlines()[7].split()
@@ -830,19 +883,23 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
                         f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
                         f.write("mate-std-dev\t{}\n".format(mate_std_dev))
 
-            ## RSeQC (default)
             else:
-                ## RSeQC: inner_distance (mean, sd)
+                ###############################################################
+                ## RSeQC inner_distance
+                ###############################################################
                 if not os.path.isdir("inner_distance"):
                     os.mkdir("inner_distance")
+
+                ## RSeQC (default)
+                if args.insert_metrics == "RSeQC":
                     for infile in infiles:
-                        bname = re.sub(".bam$","",os.path.basename(infile))
+                        bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
                         jobs = ["{} -i {} -o inner_distance/{} -r {} > inner_distance/{}.inner_distance.summary.txt".format(os.path.join(rseqc_dir_path, "inner_distance.py"), infile, re.sub(".bam$","",os.path.basename(infile)), args.bed, bname) ]
                         q.put(Qjob(jobs, logfile="LOG", shell=True))
-                q.join()
+                    q.join()
 
                 for infile in infiles:
-                    bname = re.sub(".downsampled.bam$","",os.path.basename(infile))
+                    bname = re.sub(".downsampled.transcriptome_mapped.bam$","",os.path.basename(infile))
                     with open("inner_distance/{}.downsampled.inner_distance.summary.txt".format(bname), "r") as f:
                         lines = f.readlines()
                         mate_inner_dist = "{:.0f}".format(float(lines[1]))
@@ -866,7 +923,7 @@ def run_tophat(args, q, indir):
     """
     analysis_name = "TopHat"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -906,7 +963,7 @@ def run_tophat(args, q, indir):
 
                 jobs = ["{} {} --num-threads {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}".format(tophat2_path,
                                 args.tophat_opts, max(1,int(args.processors/args.threads)), library_type, mate_inner_dist, mate_std_dev,
-                                re.sub("_R*[1|2].fastq.gz","",os.path.basename(pair[0])), args.tophat2_index, args.bowtie2_index, pair[0], pair[1])]
+                                re.sub("_R*[1|2].fastq.gz","",os.path.basename(pair[0])), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
 
                 q.put(Qjob(jobs, "LOG"))
                 time.sleep(0.1)
@@ -928,7 +985,7 @@ def run_tophat(args, q, indir):
                     exit(1)
 
                 jobs = ["{} {} --num-threads {} --library-type {} --output-dir {} --transcriptome-index {} {} {}".format(tophat2_path,
-                                args.tophat_opts,max(1,int(args.processors/args.threads)), library_type, bname, args.tophat2_index, args.bowtie2_index, infile)]
+                                args.tophat_opts,max(1,int(args.processors/args.threads)), library_type, bname, args.transcriptome_index, args.genome_index, infile)]
 
                 q.put(Qjob(jobs, "LOG"))
                 time.sleep(0.1)
@@ -960,7 +1017,7 @@ def run_rseqc(args, q, indir):
     """
     analysis_name = "RSeQC"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -1118,7 +1175,7 @@ def run_htseq_count(args, q, indir):
     """
     analysis_name = "htseq-count"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -1190,7 +1247,7 @@ def run_featureCounts(args, q, indir):
     """
     analysis_name = "featureCounts"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -1276,7 +1333,7 @@ def run_deseq2(args, q, indir):
     """
     analysis_name = "DESeq2"
     args.analysis_counter += 1
-    outdir = "{}_{}".format(add_leading_zeros(args.analysis_counter), analysis_name)
+    outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
 
     if args.overwrite and os.path.isdir(outdir):
@@ -1320,6 +1377,7 @@ def main():
     args = parse_args()
     ##print "Args:", args
 
+
     print "\n{} rna-seq-qc start".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'))
     if args.verbose:
         print "Genome:", args.genome
@@ -1332,11 +1390,15 @@ def main():
         print "htseq-count options:", args.htseq_count_opts
         print "Seed (random):", args.seed
         print "FASTA index:", args.fasta_index
-        print "Bowtie2 index:", args.bowtie2_index
-        print "Tophat2 index:", args.tophat2_index
+        print "Genome index (Bowtie2):", args.genome_index
+        print "Transcriptome index (TopHat2):", args.transcriptome_index
         print "GTF:", args.gtf
         print "BED:", args.bed
         print "BioMart:", args.biomart
+        try:
+            print "PATH:", os.environ["PATH"]
+        except:
+            print ""
 
     ### Output dir
     ##print "Outdir:", args.outdir
@@ -1358,31 +1420,26 @@ def main():
     ## FASTQ downsampling
     if args.fastq_downsample:
         indir = fastq_downsampling(args, args.indir)
-    #print "Indir:", indir
+    ### print "Output folder:", indir
 
     ## Run FastQC
     run_fastqc(args, q, indir)
 
-    # Run Trim Galore!
-    if not args.no_trim:
+    ## Run Trim Galore!
+    if args.trim:
         indir = run_trim_galore(args, q, indir)
 
     ## Stop here if requested by user (--no-bam)
     if args.no_bam:
-        print "\nPipeline stopped because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
+        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
         print "Output stored in: {}\n".format(args.outdir)
         exit(0)
 
-    #print "Indir:", indir
-    ## strand_specificity_and_distance_metrics
+    ## Run strand_specificity_and_distance_metrics
     run_strand_specificity_and_distance_metrics(args, q, indir)
 
-    #print "Indir:", indir
     ## Run TopHat
     bam_dir = run_tophat(args, q, indir)
-
-    ## Run RSeQC
-    run_rseqc(args, q, bam_dir)
 
     ## Run htseq-count
     if args.count_prg == "featureCounts":
@@ -1395,6 +1452,9 @@ def main():
 
     if args.sample_info:
         run_deseq2(args, q, count_dir)
+
+    ## Run RSeQC
+    run_rseqc(args, q, bam_dir)
 
     return args.outdir
 
