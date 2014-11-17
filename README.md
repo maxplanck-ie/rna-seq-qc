@@ -15,7 +15,7 @@ counting of features with featureCounts (default) or htseq-count, differential e
 analysis with DESeq2 (optional).
 
 The pipeline requires gzipped FASTQ files (.fastq.gz) for input, which are loaded
-from an input directory (-d INDIR). Read files belonging together require the exact same
+from an input directory (-i INDIR). Read files belonging together require the exact same
 base name but ending either in "_R1" or "_R2" right in front of the .fastq.gz extension.
 (e.g. reads_R1.fastq.gz, reads_R2.fastq.gz). In addition, a specific genome version argument
 must be provided (e.g. -g mm10) to define the reference data used for annotation.
