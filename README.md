@@ -31,4 +31,4 @@ rna-seq-qc is available at GitHub:
     https://github.com/kilpert/rna-seq-qc
 
 Example:
-  python rna-seq-qc.py -d /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
+  python rna-seq-qc.py -i /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
