@@ -32,7 +32,7 @@ __description__ = """
     http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
 
     Example:
-        python rna-seq-qc.py -d /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
+        python rna-seq-qc.py -i /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
     """
 
 import argparse
