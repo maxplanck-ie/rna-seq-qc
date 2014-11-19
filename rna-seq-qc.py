@@ -80,16 +80,16 @@ if socket.gethostname() == "pc196":
     #             '--insert-metrics', 'Picard',
     #             ]
 
-    ## SE1500000
-    sys.argv = [sys.argv[0],
-                '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
-                '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir1500000_SE',
-                '--fastq-downsample', '1500000',
-                '-g', 'mm10',
-                '--trim',
-                '-v',
-                '--insert-metrics', 'Picard',
-                ]
+    # ## SE1500000
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir1500000_SE',
+    #             '--fastq-downsample', '1500000',
+    #             '-g', 'mm10',
+    #             '--trim',
+    #             '-v',
+    #             '--insert-metrics', 'Picard',
+    #             ]
 
     # ## PE1500000
     # sys.argv = [sys.argv[0],
@@ -118,6 +118,17 @@ if socket.gethostname() == "pc196":
     #             '-v',
     #             '--DE', '/data/projects_2/kilpert/dev/rna-seq-pipeline/sampleInfo.tsv'
     #             ]
+
+    ## MiSeq_Ausma
+    sys.argv = [sys.argv[0],
+                '-i', '/data/projects/jenuwein/kilpert/project1/140731_MeRIP_Ausma/00_data/',
+                '-o', '/data/projects/jenuwein/kilpert/project1/140731_MeRIP_Ausma/18_rna-seq-qc',
+                '-g', 'mm10spiked',
+                '-v',
+                '--insert-metrics', 'Picard',
+                '--trim'
+                ]
+
 
     if "--trim_galore" in sys.argv:
         sys.argv2 = sys.argv
@@ -150,6 +161,7 @@ deseq2_path = "rna-seq-qc/DESeq2.R"     # relative to main script
 ## Different configurations
 if socket.gethostname() == "pc196":
     fastqc_path = "/home/kilpert/Software/bin/fastqc"
+    feature_counts_path = "featureCounts"
     htseq_count_path = "htseq-count"
     samtools_path = "samtools"
     tophat2_path = "tophat"
@@ -1196,8 +1208,8 @@ def run_htseq_count(args, q, indir):
 
         for infile in infiles:
             bname = re.sub(".bam$","",os.path.basename(infile))
-            strand_rule_folder = [ os.path.join(args.outdir,d,"infer_experiment") for d in os.listdir(args.outdir) if d.endswith("RSeQC") ][0]
-            strand_rule = get_strand_from_rseqc(os.path.join(strand_rule_folder, bname+".infer_experiment.txt"), "htseq")
+            strand_rule_folder = os.path.join(args.outdir, "strand_specificity_and_distance_metrics", "infer_experiment")
+            strand_rule = get_strand_from_rseqc(os.path.join(strand_rule_folder, bname+".downsampled.infer_experiment.txt"), "htseq")
             jobs = [ "{samtools_path} sort -n {infile} -o {bam_outfile} -m {mem}G -@ {processors} | {samtools_path} view -h - | {htseq_count_path} {htseq_count_opts} --stranded={strand} - {gtf} > {outfile}" \
                       .format(samtools_path=samtools_path,
                               infile=infile,
@@ -1272,11 +1284,10 @@ def run_featureCounts(args, q, indir):
 
         for infile in infiles:
             bname = re.sub(".bam$","",os.path.basename(infile))
-            print bname
 
             ## strand-specific counting
-            strand_rule_folder = [ os.path.join(args.outdir,d,"infer_experiment") for d in os.listdir(args.outdir) if d.endswith("RSeQC") ][0]
-            strand_rule = get_strand_from_rseqc(os.path.join(strand_rule_folder, bname+".infer_experiment.txt"), "htseq")
+            strand_rule_folder = os.path.join(args.outdir, "strand_specificity_and_distance_metrics", "infer_experiment")
+            strand_rule = get_strand_from_rseqc(os.path.join(strand_rule_folder, bname+".downsampled.infer_experiment.txt"), "htseq")
             if strand_rule == "reverse":
                 strand_rule = 2
             elif strand_rule == "yes":
