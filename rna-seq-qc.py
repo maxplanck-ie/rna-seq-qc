@@ -445,7 +445,7 @@ def get_strand_from_rseqc(infile, prog):
             print infile
             exit(1)
 
-        threshold = 0.8      #min quotient threshold
+        threshold = 0.7      #min quotient threshold
 
         k = strands.keys()
         v = strands.values()
