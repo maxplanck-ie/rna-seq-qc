@@ -126,7 +126,8 @@ if socket.gethostname() == "pc196":
                 '-g', 'mm10spiked',
                 '-v',
                 '--insert-metrics', 'Picard',
-                '--trim'
+                '--trim',
+                '--tophat_opts', '"--no-discordant --no-mixed"'
                 ]
 
 
@@ -210,7 +211,7 @@ def parse_args():
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
     parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '--stringency 2')", type=str, default="--stringency 2")
-    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="--max-multihits 1")     #--library-type fr-firststrand
+    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="")     #--library-type fr-firststrand
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast')", type=str, default="--end-to-end --fast")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '')", type=str, default="-Q 10")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string", type=str, default="--mode union")
@@ -1064,9 +1065,9 @@ def run_rseqc(args, q, indir):
 
                 strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
                 if strand_rule is not None:
-                    jobs = ["{} --strand='{}' -t 1000000000 --skip-multi-hits -i {} -o bam2wig/{} -s <(cut -f 1,2 {})".format(os.path.join(rseqc_dir_path, "bam2wig.py"), strand_rule, infile, bname, args.fasta_index) ]
+                    jobs = ["{} --strand='{}' -t 1000000000 --skip-multi-hits -i {} -o bam2wig/{} -s {}".format(os.path.join(rseqc_dir_path, "bam2wig.py"), strand_rule, infile, bname, args.fasta_index) ]
                 else:
-                    jobs = ["{} -t 1000000000 --skip-multi-hits -i {} -o bam2wig/{} -s <(cut -f 1,2 {})".format(os.path.join(rseqc_dir_path, "bam2wig.py"), infile, bname, args.fasta_index) ]
+                    jobs = ["{} -t 1000000000 --skip-multi-hits -i {} -o bam2wig/{} -s {}".format(os.path.join(rseqc_dir_path, "bam2wig.py"), infile, bname, args.fasta_index) ]
                 q.put(Qjob(jobs, logfile="LOG", shell=True))
             q.join()
             ## convert wig to bw
