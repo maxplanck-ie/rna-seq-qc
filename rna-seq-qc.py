@@ -703,7 +703,7 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
             else:
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
                 jobs = ["{}trim_galore {} {}".format(trim_galore_path, args.trim_galore_opts, infile),
-                        "mv {}_trimmed.fq.gz {}.fastq.gz".format(bname, bname)]
+                        "mv {}_trimmed.fq.gz {}.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True))
             time.sleep(0.2)
