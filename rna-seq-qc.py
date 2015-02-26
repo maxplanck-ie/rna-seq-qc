@@ -847,105 +847,105 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
                 time.sleep(0.1)
-        q.join()
-        if is_error:
-            exit(is_error)
-
-        #######################################################################
-
-        infiles = sorted([f for f in os.listdir(os.getcwd()) if f.endswith(".transcriptome_mapped.bam")])
-
-        ######################################################################
-        ## Picard InsertSizeMetrics
-        #######################################################################
-
-        if args.insert_metrics == "Picard":
-
-            ## Picard: CollectInsertSizeMetrics (mean, sd)
-            if not os.path.isdir("InsertSizeMetrics"):
-                os.mkdir("InsertSizeMetrics")
-
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
-
-                jobs = ["java -jar -Xmx4g {}CollectInsertSizeMetrics.jar INPUT={} OUTPUT={} HISTOGRAM_FILE={}"\
-                        .format( picardtools_path, os.path.join(cwd, infile),
-                                 os.path.join(cwd, "InsertSizeMetrics", bname+".InsertSizeMetrics.txt"),
-                                 os.path.join(cwd, "InsertSizeMetrics", bname+".histogram.pdf")),]
-
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             if is_error:
                 exit(is_error)
 
+            #######################################################################
 
-            ## CollectAlignmentSummaryMetrics (mean read length)
-            if not os.path.isdir("AlignmentSummaryMetrics"):
-                os.mkdir("AlignmentSummaryMetrics")
+            infiles = sorted([f for f in os.listdir(os.getcwd()) if f.endswith(".transcriptome_mapped.bam")])
 
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+            ######################################################################
+            ## Picard InsertSizeMetrics
+            #######################################################################
 
-                jobs = ["java -jar -Xmx4g {}CollectAlignmentSummaryMetrics.jar INPUT={} OUTPUT={}"\
-                            .format( picardtools_path,
-                                     os.path.join(cwd, infile),
-                                     os.path.join(cwd, "AlignmentSummaryMetrics", bname+".AlignmentSummaryMetrics.txt")),]
+            if args.insert_metrics == "Picard":
 
+                ## Picard: CollectInsertSizeMetrics (mean, sd)
+                if not os.path.isdir("InsertSizeMetrics"):
+                    os.mkdir("InsertSizeMetrics")
 
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
-            q.join()
-            if is_error:
-                exit(is_error)
-
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
-
-                with open("InsertSizeMetrics/{}.InsertSizeMetrics.txt".format(bname), "r") as f:
-                    metrics = f.readlines()[7].split()
-                    mean_insert_size = float(metrics[4])
-                    standard_deviation = float(metrics[5])
-                with open("AlignmentSummaryMetrics/{}.AlignmentSummaryMetrics.txt".format(bname), "r") as f:
-                    mean_read_length = float(f.readlines()[9].split()[15])
-                mate_inner_dist = "{:.0f}".format(mean_insert_size - mean_read_length*2)
-                mate_std_dev = "{:.0f}".format(standard_deviation)
-                with open("{}.TopHat2.txt".format(bname), "a") as f:
-                    f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
-                    f.write("mate-std-dev\t{}\n".format(mate_std_dev))
-        else:
-            ###############################################################
-            ## RSeQC inner_distance
-            ###############################################################
-            if not os.path.isdir("inner_distance"):
-                os.mkdir("inner_distance")
-
-            ## RSeQC (default)
-            if args.insert_metrics == "RSeQC":
                 for infile in infiles:
-                    bname = " ".join(infile.split(".")[:-2])
-                    jobs = ["{}inner_distance.py -i {} -o {} -r {} > {}".format(rseqc_path,
-                                        os.path.join(cwd, infile),
-                                        os.path.join(cwd, bname),
-                                        args.bed,
-                                        #bname) ]
-                                        os.path.join(cwd, "inner_distance", bname+".inner_distance.summary.txt")),]
-                    print jobs
+                    bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+
+                    jobs = ["java -jar -Xmx4g {}CollectInsertSizeMetrics.jar INPUT={} OUTPUT={} HISTOGRAM_FILE={}"\
+                            .format( picardtools_path, os.path.join(cwd, infile),
+                                     os.path.join(cwd, "InsertSizeMetrics", bname+".InsertSizeMetrics.txt"),
+                                     os.path.join(cwd, "InsertSizeMetrics", bname+".histogram.pdf")),]
+
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                     time.sleep(0.1)
                 q.join()
                 if is_error:
                     exit(is_error)
 
-            for infile in infiles:
-                bname = " ".join(infile.split(".")[:-2])
-                with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
-                    lines = f.readlines()
-                    mate_inner_dist = "{:.0f}".format(float(lines[1]))
-                    mate_std_dev = "{:.0f}".format(float(lines[5]))
-                with open("{}.TopHat2.txt".format(bname), "a") as f:
-                    f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
-                    f.write("mate-std-dev\t{}\n".format(mate_std_dev))
+
+                ## CollectAlignmentSummaryMetrics (mean read length)
+                if not os.path.isdir("AlignmentSummaryMetrics"):
+                    os.mkdir("AlignmentSummaryMetrics")
+
+                for infile in infiles:
+                    bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+
+                    jobs = ["java -jar -Xmx4g {}CollectAlignmentSummaryMetrics.jar INPUT={} OUTPUT={}"\
+                                .format( picardtools_path,
+                                         os.path.join(cwd, infile),
+                                         os.path.join(cwd, "AlignmentSummaryMetrics", bname+".AlignmentSummaryMetrics.txt")),]
+
+
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+                    time.sleep(0.1)
+                q.join()
+                if is_error:
+                    exit(is_error)
+
+                for infile in infiles:
+                    bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+
+                    with open("InsertSizeMetrics/{}.InsertSizeMetrics.txt".format(bname), "r") as f:
+                        metrics = f.readlines()[7].split()
+                        mean_insert_size = float(metrics[4])
+                        standard_deviation = float(metrics[5])
+                    with open("AlignmentSummaryMetrics/{}.AlignmentSummaryMetrics.txt".format(bname), "r") as f:
+                        mean_read_length = float(f.readlines()[9].split()[15])
+                    mate_inner_dist = "{:.0f}".format(mean_insert_size - mean_read_length*2)
+                    mate_std_dev = "{:.0f}".format(standard_deviation)
+                    with open("{}.TopHat2.txt".format(bname), "a") as f:
+                        f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
+                        f.write("mate-std-dev\t{}\n".format(mate_std_dev))
+            else:
+                ###############################################################
+                ## RSeQC inner_distance
+                ###############################################################
+                if not os.path.isdir("inner_distance"):
+                    os.mkdir("inner_distance")
+
+                ## RSeQC (default)
+                if args.insert_metrics == "RSeQC":
+                    for infile in infiles:
+                        bname = " ".join(infile.split(".")[:-2])
+                        jobs = ["{}inner_distance.py -i {} -o {} -r {} > {}".format(rseqc_path,
+                                            os.path.join(cwd, infile),
+                                            os.path.join(cwd, bname),
+                                            args.bed,
+                                            #bname) ]
+                                            os.path.join(cwd, "inner_distance", bname+".inner_distance.summary.txt")),]
+                        print jobs
+                        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+                        time.sleep(0.1)
+                    q.join()
+                    if is_error:
+                        exit(is_error)
+
+                for infile in infiles:
+                    bname = " ".join(infile.split(".")[:-2])
+                    with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
+                        lines = f.readlines()
+                        mate_inner_dist = "{:.0f}".format(float(lines[1]))
+                        mate_std_dev = "{:.0f}".format(float(lines[5]))
+                    with open("{}.TopHat2.txt".format(bname), "a") as f:
+                        f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
+                        f.write("mate-std-dev\t{}\n".format(mate_std_dev))
 
     print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
