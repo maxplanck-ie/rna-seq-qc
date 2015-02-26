@@ -789,7 +789,7 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
             for infile in infiles:
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
 
-                jobs = ["{}bowtie2 -x {} -U {} -p {} {} | {}samtools view -Sb - | {}samtools sort - {}.genome_mapped"\
+                jobs = ["{}bowtie2 -x {} -U {} -p {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.genome_mapped"\
                          .format(bowtie2_path, args.genome_index, infile, args.threads, args.bowtie_opts,
                          samtools_path,
                          samtools_path, samtools_threads, samtools_mem, bname),]
@@ -815,7 +815,6 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
             bname = " ".join(infile.split(".")[:-2])
             jobs = ["{}infer_experiment.py -i {} -r {} > {}"\
                         .format(rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")) ]
-            print jobs
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
             time.sleep(0.1)
         q.join()
@@ -843,15 +842,6 @@ def run_strand_specificity_and_distance_metrics(args, q, indir):
 
                 jobs = ["{}bowtie2 -x {} -1 {} -2 {} --threads {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.transcriptome_mapped"\
                          .format(bowtie2_path, args.transcriptome_index, pair[0], pair[1], args.threads, args.bowtie_opts,
-                         samtools_path,
-                         samtools_path, samtools_threads, samtools_mem, bname),]
-
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
-                time.sleep(0.1)
-        else:
-            for infile in infiles:
-                jobs = ["{}bowtie2 -x {} -U {} -p {} {} | {}samtools view -Sb - | {}samtools sort - {}.transcriptome_mapped"\
-                         .format(bowtie2_path, args.transcriptome_index, infile, args.threads, args.bowtie_opts,
                          samtools_path,
                          samtools_path, samtools_threads, samtools_mem, bname),]
 
