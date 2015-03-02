@@ -1023,7 +1023,7 @@ def run_tophat(args, q, indir):
                     print "Error! Unable to read metrics from file: {}\n\n".format(tophat_settings_file)
                     exit(1)
 
-                jobs = ["{} {}tophat2 {} --num-threads {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
+                jobs = ["{} {} {}tophat2 {} --num-threads {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
                             .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
