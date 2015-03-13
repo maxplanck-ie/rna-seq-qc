@@ -90,7 +90,8 @@ if (file.exists(biomartFilePath)) {
   head(res_output)
   tail(res_output) 
 } 
-#else {
+else {
+    cat(paste("BioMart.tsv NOT found\n"))
 #   ## download if necessary
 #   library("biomaRt")
 #   cat(paste("BioMart.tsv NOT found. Downloading...\n")) 
@@ -100,7 +101,7 @@ if (file.exists(biomartFilePath)) {
 #                       values = rownames(res),
 #                       mart = ensembl)
 #   write.table(bmGeneNames,"BioMart.tsv", sep="\t", quote=FALSE, col.names=NA) 
-# }
+}
 
 ################################################################################
 
@@ -181,7 +182,7 @@ heatmap.2(sampleDistMatrix,trace="none",col=colours,
 dev.off()
 
 ## PCA
-pdf("Fig6.PCA.pdf")
+pdf("PCA.pdf")
 print(plotPCA(rld, intgroup=c("condition")))
 dev.off()
 
