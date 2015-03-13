@@ -60,6 +60,7 @@ import time
 #### Development settins ######################################################
 
 if socket.gethostname() == "pc196":
+    pass
 
     # # steffen
     # sys.argv = [sys.argv[0],
@@ -102,16 +103,16 @@ if socket.gethostname() == "pc196":
     #             "--rseqc-preselection", "2",
     #             ]
 
-    ## SE1500000
-    sys.argv = [sys.argv[0],
-                '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
-                '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_SE_FULL',
-                #'--fastq-downsample', '200000',
-                '-g', 'mm10',
-                '--trim',
-                '-v',
-                '--insert-metrics', 'Picard',
-                ]
+    # ## SE1500000
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
+    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_SE_FULL',
+    #             #'--fastq-downsample', '200000',
+    #             '-g', 'mm10',
+    #             '--trim',
+    #             '-v',
+    #             '--insert-metrics', 'Picard',
+    #             ]
 
     # ## PE1500000
     # sys.argv = [sys.argv[0],
