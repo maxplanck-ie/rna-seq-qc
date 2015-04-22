@@ -1,4 +1,4 @@
-rna-seq-qc v0.3.1
+rna-seq-qc v0.4.0
 =================
 
 RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
