@@ -113,10 +113,9 @@ if (file.exists(geneNamesFilePath)) {
   }
 }
 
-
 ## generate a dataframe from ids
 id_to_gene_name = function(ids) {
-  d = data.frame(IDs=ids, gene_names=NA)
+  d = data.frame(IDs=gsub("\\..*", "", ids), gene_names=NA)
   d$gene_names = gene_names_dic[ as.character(d$IDs) ]
   head(d)
   
