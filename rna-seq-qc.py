@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-__version__ = "rna-seq-qc v0.3.1"
+__version__ = "rna-seq-qc v0.4"
 
 
 __description__ = """
@@ -305,10 +305,10 @@ def parse_args():
         print "Error! Unable to read paths from config file:", ref_cfg_file_path
         exit(1)
 
-    ## BioMart
-    args.biomart = os.path.join(script_path, "rna-seq-qc/BioMart.{}.tsv".format(args.genome))
-    if not os.path.isfile(args.biomart):
-        args.biomart = ""
+    ## gene names, e.g. BioMart
+    args.gene_names = os.path.join(script_path, "rna-seq-qc/{}.gene_names".format(args.genome))
+    if not os.path.isfile(args.gene_names):
+        args.gene_names = ""
         
     return args
 
@@ -1485,7 +1485,7 @@ def run_deseq2(args, q, indir):
         counts_file = os.path.join(indir, "counts.txt")
         print "In:", counts_file
 
-        jobs = ["cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(script_path, R_path, args.sample_info, counts_file, 0.05, args.biomart)]
+        jobs = ["cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
 
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
 
@@ -1526,7 +1526,7 @@ def main():
         print "Transcriptome index (TopHat2):", args.transcriptome_index
         print "GTF:", args.gtf
         print "BED:", args.bed
-        print "BioMart:", args.biomart
+        print "Gene names:", args.gene_names
         try:
             print "PATH:", os.environ["PATH"]
         except:
@@ -1578,17 +1578,17 @@ def main():
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
-    ## Stop here if requested by user (--no-bam)
-    if args.no_bam:
-        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
-        print "Output stored in: {}\n".format(args.outdir)
-        exit(0)
-
     ## Run strand_specificity_and_distance_metrics
     t1 = datetime.datetime.now()
     run_strand_specificity_and_distance_metrics(args, q, indir)
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
+
+    ## Stop here if requested by user (--no-bam)
+    if args.no_bam:
+        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
+        print "Output stored in: {}\n".format(args.outdir)
+        exit(0)
 
     ## Run TopHat
     t1 = datetime.datetime.now()
