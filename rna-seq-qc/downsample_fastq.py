@@ -10,7 +10,7 @@ __description__ = """
     This software is distributed WITHOUT ANY WARRANTY!
 
     Example:
-        python downsample_fastq.py -v -n 200000 -s 12345 example.fastq.gz
+        python downsample_fastq.py -v -n 200000 -s 12345 example.fastq.gz few.fastq.gz
     """
 
 
@@ -44,7 +44,7 @@ def parse_args():
                         prog='downsample_fastq.py',
                         formatter_class=argparse.RawDescriptionHelpFormatter, description=textwrap.dedent(__description__))
 
-    parser.add_argument("-n", "--number", dest="num", metavar="INT", help="Number of reads (default: 10)", type=int, default=100)
+    parser.add_argument("-n", "--number", dest="num", metavar="INT", help="Number of reads (default: 100)", type=int, default=100)
     parser.add_argument("-s", "--seed", dest="seed", metavar="INT", help="Random number seed", type=int, default=None)
     parser.add_argument("--head", dest="head", action="store_true", default=False, help="Down-sampling (non-random!) just from the head of the file (default: False)")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
