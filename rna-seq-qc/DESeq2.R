@@ -1,8 +1,15 @@
-## Usage: cat DESeq2.R | R --vanilla --args count_folder sampleInfo.csv 0.05 [BioMart.tsv]
+## Usage: cat DESeq2.R | /package/R-3.1.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 [BioMart.tsv]
 
 library("DESeq2")
 
 args = commandArgs(TRUE)
+## Debug only! ################################################################
+# setwd("/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/20_DEseq/")
+# args = c('/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/sampleInfo.tsv',
+#             '/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/18_rna-seq-qc/featureCounts/counts.txt',
+#             '0.05',
+#             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names")
+###############################################################################
 
 print("Running DESeq2 from rna-seq-qc...")
 
@@ -10,25 +17,39 @@ print("Running DESeq2 from rna-seq-qc...")
 fdr = as.numeric(args[3])
 if ( is.na(fdr) ) fdr = 0.05  # default FDR
 
+topN =as.numeric(args[5])
+if ( is.na(topN) ) topN = 50  # use topN genes for plots
+
 #from command line
 sampleInfoFilePath = args[1]
 countFilePath = args[2]
-biomartFilePath = args[4]   # BioMart file with ensembl and symbol names
+geneNamesFilePath = args[4]   # BioMart file with ensembl and symbol names
 
 cat(paste("Sample info CSV:", sampleInfoFilePath, "\n"))
 cat(paste("Count file:", countFilePath, "\n"))
 cat(paste("FDR:", fdr, "\n"))
-cat(paste("BioMart file:", biomartFilePath, "\n"))
+cat(paste("Gene names:", geneNamesFilePath, "\n"))
+cat(paste("Number of top N genes:", topN, "\n"))
 
 ## sampleInfo (setupt of the experiment)
 sampleInfo = read.table(sampleInfoFilePath, header=TRUE)
 sampleInfo = DataFrame(sampleInfo)
+sampleInfo = sampleInfo[order(sampleInfo$name, decreasing=F),]  # order by sample name
 sampleInfo
 
 ## count matrix (e.g. from DESeq or featureCounts)
 countdata = read.table(countFilePath, header=TRUE)
 countdata = DataFrame(countdata)
+countdata = countdata[,order(names(countdata), decreasing=F)]  # order column names
 head(countdata)
+
+# check if sample names are the same in the input files
+if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
+  cat("Error! Count table column names and setup table names do NOT match!\n")
+  print(as.character(sampleInfo$name))
+  print(colnames(countdata))
+  quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
+}
 
 dds = DESeqDataSetFromMatrix(
   countData = countdata,
@@ -37,6 +58,7 @@ dds = DESeqDataSetFromMatrix(
 dds
 colnames(dds) = sampleInfo$name
 head(assay(dds))
+
 
 ################################################################################
 ## Extra data collecting some measures for every sample (e.g. total
@@ -71,44 +93,52 @@ dev.off()
 ## get results
 res = results(dds)
 head(res)
+summary(res)
 
 ################################################################################
-## extend results by gene names obtained via Ensembl IDs from BioMart
+## gene names dict if available
 ################################################################################
-if (file.exists(biomartFilePath)) { 
-  cat(paste("BioMart.tsv found\n")) 
-  bmGeneNames = read.csv(biomartFilePath, sep="\t", header=TRUE, row.names=1)
+
+if (file.exists(geneNamesFilePath)) { 
+  cat(paste("Gene names file found\n")) 
+  geneNames = read.csv(geneNamesFilePath, sep="\t", header=F, row.names=1, stringsAsFactors=FALSE)
   
-  res_output = merge(res,
-                        bmGeneNames,
-                        by.x = "row.names",
-                        by.y = "ensembl_gene_id",
-                        all.x = TRUE) # set gene name to "NA" if not available
-  rownames(res_output) = res_output$Row.names
-  res_output$Row.names = NULL
-  res@listData = c(res@listData, external_gene_id=list(res_output$external_gene_id))  # append new list to res@listData; keep everything in one place
-  head(res_output)
-  tail(res_output) 
-} 
-else {
-    cat(paste("BioMart.tsv NOT found\n"))
-#   ## download if necessary
-#   library("biomaRt")
-#   cat(paste("BioMart.tsv NOT found. Downloading...\n")) 
-#   ensembl = useMart("ensembl", dataset = "mmusculus_gene_ensembl")
-#   bmGeneNames = getBM(attributes = c("ensembl_gene_id", "external_gene_id"),
-#                       filters = "ensembl_gene_id",
-#                       values = rownames(res),
-#                       mart = ensembl)
-#   write.table(bmGeneNames,"BioMart.tsv", sep="\t", quote=FALSE, col.names=NA) 
+  if (length( intersect( gsub("\\..*", "", res@rownames), rownames(geneNames) ) ) > 0) {
+    cat(paste("Names matching to IDs found\n")) 
+    
+    ## make a dictionary
+    gene_names_dic = geneNames[[1]]
+    names(gene_names_dic) = rownames(geneNames)
+    ##gene_names_dic["ENSMUSG00000025332"]
+  }
+}
+
+
+## generate a dataframe from ids
+id_to_gene_name = function(ids) {
+  d = data.frame(IDs=ids, gene_names=NA)
+  d$gene_names = gene_names_dic[ as.character(d$IDs) ]
+  head(d)
+  
+  # some might be NAs; replace those by original ID
+  d[which(is.na(d$gene_names)),]$gene_names = as.character(d[which(is.na(d$gene_names)),]$IDs)
+  head(d)
+  return(d$gene_name)
 }
 
 ################################################################################
 
-## DE
-##fdr = 0.05
+if ( exists("gene_names_dic") ) {
+  cat("Gene names are available\n")
+  # update res with gene names
+  res@listData$gene_names = id_to_gene_name(rownames(res))
+}
+
+
+## DE ##########################################################################
 de_total = res[which(res$padj < fdr),]
 length(de_total[,1])
+write.table(de_total[order(de_total$padj, decreasing=F),],"DESeq2.all.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_up = de_total[which(de_total$log2FoldChange>0),]
 de_up = de_up[order(de_up$log2FoldChange, decreasing=T),]   # order by log2FoldChange
@@ -186,21 +216,26 @@ pdf("PCA.pdf")
 print(plotPCA(rld, intgroup=c("condition")))
 dev.off()
 
-## Gene clustering (across samples)
-library("genefilter")
-n=50
-topVarGenes = head(order(rowVars(assay(rld)), decreasing=T), n)
-pdf(sprintf("Fig7.gene_clustering_top%i.pdf",n))
-heatmap.2(assay(rld)[topVarGenes, ], scale="row", trace="none", dendrogram="column",
+# topN genes by pvalue
+d = data.frame(id=rownames(res), padj=res$padj)
+d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
+d_topx_padj
+plotdata = assay(rld)[d_topx_padj$id,]
+
+if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
+
+pdf(sprintf("Fig6.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
+heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
           col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),
-          main=sprintf("Gene clustering (top %d)", n),keysize=1.3,
-          margins = c(4,12))
+          main=sprintf("Top %d DE genes (by p-value)", topN), keysize=1,
+          margins = c(10,12))
 dev.off()
-# ################################################################################
+
+
+################################################################################
 
 # report on versions used
 sink("DESeq2.session_info.txt")
 sessionInfo()
 sink()
-
 
