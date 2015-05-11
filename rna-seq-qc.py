@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-__version__ = "rna-seq-qc v0.4"
+__version__ = "rna-seq-qc v0.4.1"
 
 
 __description__ = """
@@ -59,99 +59,21 @@ import time
 
 #### Development settins ######################################################
 
-if socket.gethostname() == "pc196":
-    pass
+if socket.gethostname() == "pc305":
+    #pass
 
-    # # steffen
+    # ## Test data: MiSeq_Ausma
     # sys.argv = [sys.argv[0],
-    #             '-i', '/data/processing/heyne/data_miRNA_knockdown_fabian/',
-    #             '-o', '/data/processing/kilpert/data_miRNA_knockdown_fabian_1000/',
-    #             '--fastq-downsample', '1000',
+    #             '-i', '/data/manke/group/kilpert/datasets/Ausma/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10/',
+    #             '--fastq-downsample', '5000',
     #             '-g', 'mm10',
-    #             '--trim',
-    #             '-v',
-    #             '--insert-metrics', 'Picard',
-    #             '--count-prg', 'htseq-count',
-    #             '--DE', '/data/processing/kilpert/info.txt',
-    #             '--rseqc-preselection', '1',
-    #             ]
-
-    # mm10
-
-    ## SE500
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir500_SE',
-    #             '--fastq-downsample', '500',
-    #             '-g', 'mm10',
-    #             '--trim',
-    #             '-v',
-    #             '--insert-metrics', 'Picard',
-    #             ]
-
-    # ## PE500
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/PE_full',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir20000_PE',
-    #             '--fastq-downsample', '20000',
-    #             '-g', 'mm10',
-    #             '--trim',
-    #             '-v',
-    #             '--insert-metrics', 'Picard',
-    #             "--count-prg", "htseq-count",
-    #             "--DE","/data/projects/kilpert/dev/rna-seq-pipeline/sampleInfo2.tsv",
-    #             "--rseqc-preselection", "2",
-    #             ]
-
-    # ## SE1500000
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir_SE_FULL',
-    #             #'--fastq-downsample', '200000',
-    #             '-g', 'mm10',
-    #             '--trim',
-    #             '-v',
-    #             '--insert-metrics', 'Picard',
-    #             ]
-
-    # ## PE1500000
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/SE_full',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/outdir1500000_SE',
-    #             '--fastq-downsample', '1500000',
-    #             '-g', 'mm10',
-    #             '--trim',
-    #             '-v',
-    #             '--insert-metrics', 'Picard',
-    #             ]
-
-    # 2_samples
-    # sys.argv = [sys.argv[0],
-    #             '-d', '/data/projects_2/kilpert/datasets/Bottomly/2_samples/',
-    #             '-o', '/data/projects_2/kilpert/dev/rna-seq-pipeline/2_samples',
-    #             '-g','mm10',
-    #             '-v',]
-
-    # ## 140731_MiSeq_Ausma
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects_2/kilpert/dev/rna-seq-pipeline/test_data/140731_MiSeq_Ausma',
-    #             '-o', '140731_MiSeq_Ausma',
-    #             '--fastq-downsample', '2000000',
-    #             '-g', 'mm10',
-    #             '-v',
-    #             '--DE', '/data/projects_2/kilpert/dev/rna-seq-pipeline/sampleInfo.tsv'
-    #             ]
-
-    # ## MiSeq_Ausma
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/projects/kilpert/dev/rna-seq-pipeline/test_data/140731_MiSeq_Ausma/',
-    #             '-o', '/data/projects/kilpert/dev/rna-seq-pipeline/140731_MiSeq_Ausma_FULL/',
-    #             '-g', 'mm10spiked',
     #             '-v',
     #             '--insert-metrics', 'Picard',
     #             '--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"'
-    #             '--DE', '/data/projects/kilpert/dev/rna-seq-pipeline/test_data/140731_MiSeq_Ausma/sampleInfo.tsv',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--tophat_opts', '"--no-discordant"',
+    #             '--DE', '/data/manke/group/kilpert/datasets/DeLaRosaJenuwein/setup_table.tsv',
     #             ]
 
 
@@ -187,7 +109,7 @@ samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 
 ## Different configurations for other physical maschines
-if socket.gethostname() == "pc196":
+if socket.gethostname() == "pc305":
     fastqc_path = "/home/kilpert/Software/bin/"
     trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.3.7/"
     rseqc_path = ""
@@ -304,6 +226,16 @@ def parse_args():
     except:
         print "Error! Unable to read paths from config file:", ref_cfg_file_path
         exit(1)
+
+    ## optional variables from config file
+    if args.tophat_opts:
+        #args.tophat_opts = re.sub( r'''^['"]+|['"]+$''', '', args.tophat_opts )     # strip quotes
+        args.tophat_opts = args.tophat_opts.strip('"')
+        args.tophat_opts = args.tophat_opts.strip("'")
+    try:
+        args.tophat_opts = args.tophat_opts + " " + configs["tophat_opts"]
+    except:
+        pass
 
     ## gene names, e.g. BioMart
     args.gene_names = os.path.join(script_path, "rna-seq-qc/{}.gene_names".format(args.genome))
