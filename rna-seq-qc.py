@@ -73,7 +73,7 @@ if socket.gethostname() == "pc305":
     #             '--trim',
     #             #'--tophat_opts', '"--no-discordant --no-mixed"',
     #             '--tophat_opts', '"--no-discordant"',
-    #             '--DE', '/data/manke/group/kilpert/datasets/DeLaRosaJenuwein/setup_table.tsv',
+    #             '--DE', '/data/manke/group/kilpert/datasets/Ausma/sampleInfo.tsv',
     #             ]
 
 
