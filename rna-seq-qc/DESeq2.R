@@ -43,6 +43,20 @@ countdata = DataFrame(countdata)
 countdata = countdata[,order(names(countdata), decreasing=F)]  # order column names
 head(countdata)
 
+## extract only the columns specified in the sampleInfo
+countdata = countdata[,sampleInfo[,1]]
+head(countdata)
+
+## check if columns names (from the count table) and sample names (from the sampleInfo) match
+if ( length(setdiff(colnames(countdata), as.character(sampleInfo[,1]))) > 0 ) {
+  cat("Error! Sample names in setup table and count table do NOT match!\n")
+  cat(paste(sampleInfoFilePath, "\n"))
+  cat(paste(paste(sampleInfo[,1], sep=" ")),"\n")
+  cat(paste(countFilePath, "\n"))
+  cat(paste(paste(colnames(countdata), sep=" ")),"\n")
+  q("no", 1, FALSE) # exit code 1
+}
+
 # check if sample names are the same in the input files
 if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
   cat("Error! Count table column names and setup table names do NOT match!\n")
