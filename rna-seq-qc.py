@@ -5,12 +5,15 @@ __version__ = "rna-seq-qc v0.4.2"
 
 __description__ = """
     {version}
-    Fabian Kilpert - May 12, 2015
-    email: kilpert@ie-freiburg.mpg.de
-    ----------------------------------
+    =================
+
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
+    Fabian Kilpert - May 12, 2015
+    email: kilpert@ie-freiburg.mpg.de
+
     This software is distributed WITHOUT ANY WARRANTY!
+    --------------------------------------------------
 
     Following steps are executed in succession: FASTQ subsampling (optiona), quality check
     with FASTQC, trimming of reads with Trim Galore (optional), estimation of insert size

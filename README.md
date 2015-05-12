@@ -1,9 +1,10 @@
-rna-seq-qc v0.4.1
+rna-seq-qc v0.4.2
 =================
 
 RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-Fabian Kilpert - February 18, 2015
+Fabian Kilpert - May 12, 2015
+email: kilpert@ie-freiburg.mpg.de
 
 This software is distributed WITHOUT ANY WARRANTY!
 --------------------------------------------------
@@ -27,8 +28,8 @@ works for single end and paired end sequences alike.
 The DE analysis is only executed if a valid setup table is provided
 (e.g. --DE setup_table.tsv), which defines the relationships of the samples.
 
-rna-seq-qc is available at GitHub:
-    https://github.com/kilpert/rna-seq-qc
+More information on the pipeline can be found on the wiki page:
+http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
 
 Example:
-  python rna-seq-qc.py -i /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
+    python rna-seq-qc.py -i /path/to/fastq_dir -o /path/to/ouput_dir -g mm10 -v --DE sampleInfo.tsv
