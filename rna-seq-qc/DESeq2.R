@@ -4,7 +4,7 @@ library("DESeq2")
 
 args = commandArgs(TRUE)
 ## Debug only! ################################################################
-# setwd("/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/20_DEseq/")
+# setwd("/data/processing/kilpert/test/deseq2/")
 # args = c('/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/sampleInfo.tsv',
 #             '/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/18_rna-seq-qc/featureCounts/counts.txt',
 #             '0.05',
@@ -226,7 +226,7 @@ dev.off()
 
 ## PCA
 pdf("PCA.pdf")
-print(plotPCA(rld, intgroup=c("condition")))
+print(plotPCA(rld, intgroup=c("name", "condition")))
 dev.off()
 
 # topN genes by pvalue
