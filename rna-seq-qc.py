@@ -1,13 +1,13 @@
 #!/usr/local/bin/python
 
-__version__ = "rna-seq-qc v0.4.1"
+__version__ = "rna-seq-qc v0.4.2"
 
 
 __description__ = """
     {version}
-    Fabian Kilpert - February 18, 2015
+    Fabian Kilpert - May 12, 2015
     email: kilpert@ie-freiburg.mpg.de
-    ---------------------------------
+    ----------------------------------
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
     This software is distributed WITHOUT ANY WARRANTY!
@@ -160,24 +160,24 @@ def parse_args():
     parser.add_argument("-i", "--input-dir", dest="indir", required=True, help="Input dir containing (FASTQ)")
     parser.add_argument("-o", "--output-dir", dest="outdir", required=True, help="Output directory")
     parser.add_argument("--overwrite", dest="overwrite", action = "store_true", default=False, help="Overwrite results in existing folders!")
-    parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: {}).format(default_parallel)", type=int, default=default_parallel)
+    parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: {})".format(default_parallel), type=int, default=default_parallel)
     parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: {})".format(default_threads), type=int, default=default_threads)
     parser.add_argument("--seed", dest="seed", metavar="INT", help="Random number seed", type=int, default=None)
-    parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences", type=int, default=None)
+    parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences (for testing only!)", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
     parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '--stringency 2')", type=str, default="--stringency 2")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="")     #--library-type fr-firststrand
-    parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast')", type=str, default="--end-to-end --fast")
+    parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast'); for parameter estimation step only (no direct effect on Tophat2 mapping!)", type=str, default="--end-to-end --fast")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '')", type=str, default="-Q 10")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string", type=str, default="--mode union")
     parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using RSeQC (default) or Picard", type=str, default="RSeQC")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts (default) or htseq-count", type=str, default="featureCounts")
-    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs (default: 1 for minimum selection)", type=int, default="1")
+    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
-    parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads. Default: Using Trim Galore!")
-    parser.add_argument("--DE", dest="sample_info", help="Information on samples (required for DE analysis)")
+    parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
+    parser.add_argument("--DE", dest="sample_info", help="Information on samples (required for DE analysis); see rna-seq-qc/example.setup_table.tsv for example")
 
     ### Positional arguments (required!)
     args = parser.parse_args()
