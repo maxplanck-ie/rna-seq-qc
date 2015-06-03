@@ -1,9 +1,9 @@
-rna-seq-qc v0.4.2
+rna-seq-qc v0.5.0
 =================
 
 RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-Fabian Kilpert - May 12, 2015
+Fabian Kilpert - June 3, 2015
 email: kilpert@ie-freiburg.mpg.de
 
 This software is distributed WITHOUT ANY WARRANTY!
@@ -20,7 +20,7 @@ from an input directory (-i INDIR). Read files belonging together require the ex
 base name but ending either in "_R1" or "_R2" right in front of the .fastq.gz extension.
 (e.g. reads_R1.fastq.gz, reads_R2.fastq.gz). In addition, a specific genome version argument
 must be provided (e.g. -g mm10) to define the reference data used for annotation.
-This loads a number of indexes for mapping programs (Bowtie2, TopHat2, etc.) from the
+This loads a number of indexes for mapping programs (Bowtie2, TopHat2, HISAT etc.) from the
 corresponding configuration file of the rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg).
 Additional genomes for selection can be provided as cfg-files by the user. The pipeline
 works for single end and paired end sequences alike.
