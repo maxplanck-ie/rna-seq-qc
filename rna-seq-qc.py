@@ -26,7 +26,7 @@ __description__ = """
     base name but ending either in "_R1" or "_R2" right in front of the .fastq.gz extension.
     (e.g. reads_R1.fastq.gz, reads_R2.fastq.gz). In addition, a specific genome version argument
     must be provided (e.g. -g mm10) to define the reference data used for annotation.
-    This loads a number of indexes for mapping programs (Bowtie2, TopHat2, HISAT etc.) from the
+    This loads a number of indexes for mapping programs (Bowtie2, TopHat2, HISAT, etc.) from the
     corresponding configuration file of the rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg).
     Additional genomes for selection can be provided as cfg-files by the user. The pipeline
     works for single end and paired end sequences alike.
@@ -68,7 +68,7 @@ if socket.gethostname() == "pc305":
     ## Test data: MiSeq_Ausma
     sys.argv = [sys.argv[0],
                 '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_HISAT/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_PC305/',
                 '--fastq-downsample', '5000',
                 '-g', 'mm10',
                 '-v',
@@ -98,7 +98,7 @@ temp_dir = tempfile.gettempdir()
 script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 ## Path defaults to all needed scripts and programs
-fastqc_path = "/package/FastQC_v0.11.2/"
+fastqc_path = "/package/FastQC_v0.11.3/"
 trim_galore_path = "/package/trim_galore_v0.3.7/"
 rseqc_path = "/package/RSeQC-2.4/bin/"
 bowtie2_path = "/package/bowtie2-2.2.3/"
@@ -133,7 +133,6 @@ if socket.gethostname() == "pc305":
 
 
 #### DEFAULT VARIABLES #################################################################################################
-downsample_size = 1000000       #for CollectInsertSizeMetrics
 is_error = False
 default_threads = 3           # Threads per process
 default_parallel = 1          # Parallel files
