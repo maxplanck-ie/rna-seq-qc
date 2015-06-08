@@ -116,7 +116,7 @@ ucsctools_dir_path = "/package/UCSCtools/"
 hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
 
 
-## Different configurations for other physical maschines
+## Different configurations for other physical machines
 if socket.gethostname() == "pc305":
     fastqc_path = "/home/kilpert/Software/bin/"
     trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"
