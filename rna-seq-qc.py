@@ -68,7 +68,7 @@ if socket.gethostname() == "pc305":
     ## Test data: MiSeq_Ausma
     sys.argv = [sys.argv[0],
                 '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_PC305/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_test/',
                 '--fastq-downsample', '5000',
                 '-g', 'mm10',
                 '-v',
@@ -99,7 +99,7 @@ script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 ## Path defaults to all needed scripts and programs
 fastqc_path = "/package/FastQC-0.11.3/"
-trim_galore_path = "/package/trim_galore_v0.3.7/"
+trim_galore_path = "/package/trim_galore_v0.4.0/"
 rseqc_path = "/package/RSeQC-2.4/bin/"
 bowtie2_path = "/package/bowtie2-2.2.3/"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
@@ -117,7 +117,7 @@ hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
 ## Different configurations for other physical maschines
 if socket.gethostname() == "pc305":
     fastqc_path = "/home/kilpert/Software/bin/"
-    trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.3.7/"
+    trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"
     rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"
     bowtie2_path = ""
     bowtie2_export = ""
