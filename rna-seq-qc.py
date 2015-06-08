@@ -113,6 +113,7 @@ samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
 hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
+cutadapt_activate = "/package/cutadapt-1.8.1/bin/activate"
 
 ## Different configurations for other physical maschines
 if socket.gethostname() == "pc305":
@@ -693,15 +694,15 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
         for infile in infiles:
             if args.paired:
                 bname = re.sub("[1|2].fastq.gz$","",os.path.basename(infile[0]))
-                jobs = ["{}trim_galore --paired {} {} {}".format(trim_galore_path, args.trim_galore_opts, infile[0], infile[1]),
+                jobs = ["source {} && {}trim_galore --paired {} {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile[0], infile[1]),
                                  "mv {}1_val_1.fq.gz {}1.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname)),
                                  "mv {}2_val_2.fq.gz {}2.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
             else:
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                jobs = ["{}trim_galore {} {}".format(trim_galore_path, args.trim_galore_opts, infile),
+                jobs = ["source {} && {}trim_galore {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile),
                         "mv {}_trimmed.fq.gz {}.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
 
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True))
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True))
             time.sleep(0.2)
         q.join()
         if is_error:
