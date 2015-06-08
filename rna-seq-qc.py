@@ -100,6 +100,7 @@ script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 ## Path defaults to all needed scripts and programs
 fastqc_path = "/package/FastQC-0.11.3/"
 trim_galore_path = "/package/trim_galore_v0.4.0/"
+cutadapt_activate = "source /package/cutadapt-1.8.1/bin/activate &&"
 rseqc_path = "/package/RSeQC-2.4/bin/"
 bowtie2_path = "/package/bowtie2-2.2.3/"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
@@ -113,12 +114,13 @@ samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
 hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
-cutadapt_activate = "/package/cutadapt-1.8.1/bin/activate"
+
 
 ## Different configurations for other physical maschines
 if socket.gethostname() == "pc305":
     fastqc_path = "/home/kilpert/Software/bin/"
     trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"
+    cutadapt_activate = ""
     rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"
     bowtie2_path = ""
     bowtie2_export = ""
@@ -694,12 +696,12 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
         for infile in infiles:
             if args.paired:
                 bname = re.sub("[1|2].fastq.gz$","",os.path.basename(infile[0]))
-                jobs = ["source {} && {}trim_galore --paired {} {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile[0], infile[1]),
+                jobs = ["{} {}trim_galore --paired {} {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile[0], infile[1]),
                                  "mv {}1_val_1.fq.gz {}1.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname)),
                                  "mv {}2_val_2.fq.gz {}2.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
             else:
                 bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                jobs = ["source {} && {}trim_galore {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile),
+                jobs = ["{} {}trim_galore {} {}".format(cutadapt_activate, trim_galore_path, args.trim_galore_opts, infile),
                         "mv {}_trimmed.fq.gz {}.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True))
