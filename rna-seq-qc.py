@@ -102,6 +102,7 @@ fastqc_path = "/package/FastQC-0.11.3/"
 trim_galore_path = "/package/trim_galore_v0.4.0/"
 cutadapt_activate = "source /package/cutadapt-1.8.1/bin/activate &&"
 rseqc_path = "/package/RSeQC-2.4/bin/"
+rseqc_activate = "source /package/RSeQC-2.6.1/bin/activate &&"
 bowtie2_path = "/package/bowtie2-2.2.3/"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
 picardtools_path = "/package/picard-tools-1.121/"
@@ -122,6 +123,7 @@ if socket.gethostname() == "pc305":
     trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"
     cutadapt_activate = ""
     rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"
+    rseqc_activate = ""
     bowtie2_path = ""
     bowtie2_export = ""
     picardtools_path = "/home/kilpert/Software/picard-tools/picard-tools-1.115/"
@@ -805,7 +807,7 @@ def run_library_type(args, q, indir):
         if not os.path.isdir("infer_experiment"):
             os.mkdir("infer_experiment")
 
-        jobs = ["{}infer_experiment.py --version".format(rseqc_path)]
+        jobs = ["{} {}infer_experiment.py --version".format(rseqc_activate, rseqc_path)]
         q.put(Qjob(jobs, shell=False, logfile="LOG"))
         q.join()
 
@@ -813,8 +815,8 @@ def run_library_type(args, q, indir):
         for infile in infiles:
             print infile
             bname = " ".join(infile.split(".")[:-2])
-            jobs = ["{}infer_experiment.py -i {} -r {} > {}"\
-                        .format(rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")),
+            jobs = ["{} {}infer_experiment.py -i {} -r {} > {}"\
+                        .format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")),
                     "rm {}.genome_mapped.bam".format(os.path.join(args.outdir, outdir, bname)),
                     ]
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
@@ -992,7 +994,7 @@ def run_distance_metrics(args, q, indir):
             if args.insert_metrics == "RSeQC":
                 for infile in infiles:
                     bname = " ".join(infile.split(".")[:-2])
-                    jobs = ["export PATH={}:$PATH && {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_path,
+                    jobs = ["export PATH={}:$PATH && {} {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path,
                                         os.path.join(cwd, infile),
                                         os.path.join(cwd, "inner_distance" , bname),
                                         args.bed,
@@ -1436,7 +1438,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("infer_experiment")
             for infile in infiles:
                 bname = ".".join(os.path.basename(infile).split(".")[:-1])
-                jobs = ["{}infer_experiment.py -i {} -r {} > {}".format(rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname)+".infer_experiment.txt")]
+                jobs = ["{} {}infer_experiment.py -i {} -r {} > {}".format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname)+".infer_experiment.txt")]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1451,9 +1453,9 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
                 if strand_rule is not None:
-                    jobs = ["{}bam2wig.py --strand='{}' -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_path, strand_rule, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
+                    jobs = ["{} {}bam2wig.py --strand='{}' -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_activate, rseqc_path, strand_rule, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
                 else:
-                    jobs = ["{}bam2wig.py -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_path, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
+                    jobs = ["{} {}bam2wig.py -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1473,7 +1475,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("bam_stat")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                jobs = ["{}bam_stat.py -i {} 2> {}".format(rseqc_path, infile, os.path.join(cwd, "bam_stat", bname)+".bam_stat.txt")]
+                jobs = ["{} {}bam_stat.py -i {} 2> {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "bam_stat", bname)+".bam_stat.txt")]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1486,7 +1488,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("geneBody_coverage")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                jobs = ["{}geneBody_coverage.py -i {} -o {} -r {}".format(rseqc_path, infile, os.path.join(cwd, "geneBody_coverage", bname)+".geneBody_coverage", args.bed) ]
+                jobs = ["{} {}geneBody_coverage.py -i {} -o {} -r {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "geneBody_coverage", bname)+".geneBody_coverage", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1499,7 +1501,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("junction_annotation")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                jobs = ["{}junction_annotation.py -i {} -o {} -r {}".format(rseqc_path, infile, os.path.join(cwd, "junction_annotation", bname)+".junction_annotation", args.bed) ]
+                jobs = ["{} {}junction_annotation.py -i {} -o {} -r {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "junction_annotation", bname)+".junction_annotation", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1512,7 +1514,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("junction_saturation")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                jobs = [ "{}junction_saturation.py -i {} -o {} -r {}".format(rseqc_path, infile, os.path.join(cwd, "junction_saturation", bname)+".junction_saturation", args.bed) ]
+                jobs = [ "{} {}junction_saturation.py -i {} -o {} -r {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "junction_saturation", bname)+".junction_saturation", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1525,7 +1527,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("read_duplication")
             for infile in infiles:
                 bname = re.sub(".bam","",os.path.basename(infile))
-                jobs = [ "{}read_duplication.py -i {} -o {}".format(rseqc_path, infile, os.path.join(cwd, "read_duplication", bname)+".read_duplication") ]
+                jobs = [ "{} {}read_duplication.py -i {} -o {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "read_duplication", bname)+".read_duplication") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1540,7 +1542,7 @@ def run_rseqc(args, q, indir):
                 os.mkdir("read_distribution")
                 for infile in infiles:
                     bname = re.sub(".bam","",os.path.basename(infile))
-                    jobs = [ "{}read_distribution.py -i {} -r {} > {}".format(rseqc_path, infile, args.bed, os.path.join(cwd, "read_distribution", bname)+".read_distribution.txt") ]
+                    jobs = [ "{} {}read_distribution.py -i {} -r {} > {}".format(rseqc_activate, rseqc_path, infile, args.bed, os.path.join(cwd, "read_distribution", bname)+".read_distribution.txt") ]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                     time.sleep(0.1)
                 q.join()
@@ -1553,7 +1555,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("read_GC")
             for infile in infiles:
                 bname = re.sub(".bam","",os.path.basename(infile))
-                jobs = [ "{}read_GC.py -i {} -o {}".format(rseqc_path, infile, os.path.join(cwd, "read_GC", bname)+".read_GC") ]
+                jobs = [ "{} {}read_GC.py -i {} -o {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "read_GC", bname)+".read_GC") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1566,7 +1568,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("read_NVC")
             for infile in infiles:
                 bname = re.sub(".bam","",os.path.basename(infile))
-                jobs = [ "{}read_NVC.py -i {} -o {}".format(rseqc_path, infile, re.sub(".bam$", "", os.path.join(cwd, "read_NVC", bname)+".read_NVC")) ]
+                jobs = [ "{} {}read_NVC.py -i {} -o {}".format(rseqc_activate, rseqc_path, infile, re.sub(".bam$", "", os.path.join(cwd, "read_NVC", bname)+".read_NVC")) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1585,7 +1587,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("spilt_bam")
             for infile in infiles:
                 bname = re.sub(".bam","",os.path.basename(infile))
-                jobs = [ "{}split_bam.py -i {} -r {} -o {}".format(rseqc_path, infile, args.bed, re.sub(".bam$", "", os.path.join(cwd, "spilt_bam", bname)+".spilt_bam")) ]
+                jobs = [ "{} {}split_bam.py -i {} -r {} -o {}".format(rseqc_activate, rseqc_path, infile, args.bed, re.sub(".bam$", "", os.path.join(cwd, "spilt_bam", bname)+".spilt_bam")) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1599,7 +1601,7 @@ def run_rseqc(args, q, indir):
                 os.mkdir("inner_distance")
                 for infile in infiles:
                     bname = re.sub(".bam$","",os.path.basename(infile))
-                    jobs = ["{}inner_distance.py -i {} -o {} -r {} > {}".format(rseqc_path, os.path.join(cwd, infile), os.path.join(cwd, "inner_distance", bname), args.bed, os.path.join(cwd, "inner_distance", bname)+".inner_distance.summary.txt") ]
+                    jobs = ["{} {}inner_distance.py -i {} -o {} -r {} > {}".format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), os.path.join(cwd, "inner_distance", bname), args.bed, os.path.join(cwd, "inner_distance", bname)+".inner_distance.summary.txt") ]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                     time.sleep(0.1)
                 q.join()
@@ -1614,9 +1616,9 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
                 if strand_rule is not None:
-                    jobs = [ "{}RPKM_count.py --strand='{}' --skip-multi-hits -i {} -r {} -o {}".format(rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed,  os.path.join(cwd, "RPKM_count", bname)+ ".RPKM") ]
+                    jobs = [ "{} {}RPKM_count.py --strand='{}' --skip-multi-hits -i {} -r {} -o {}".format(rseqc_activate, rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed,  os.path.join(cwd, "RPKM_count", bname)+ ".RPKM") ]
                 else:
-                    jobs = [ "{}RPKM_count.py --skip-multi-hits -i {} -r {} -o {}".format(rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_count", bname)+".RPKM") ]
+                    jobs = [ "{} {}RPKM_count.py --skip-multi-hits -i {} -r {} -o {}".format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_count", bname)+".RPKM") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
@@ -1631,9 +1633,9 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
                 if strand_rule is not None:
-                    jobs =  [ "{}RPKM_saturation.py --strand='{}' -i {} -r {} -o {}".format(rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
+                    jobs =  [ "{} {}RPKM_saturation.py --strand='{}' -i {} -r {} -o {}".format(rseqc_activate, rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
                 else:
-                    jobs =  [ "{}RPKM_saturation.py -i {} -r {} -o {}".format(rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
+                    jobs =  [ "{} {}RPKM_saturation.py -i {} -r {} -o {}".format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
             q.join()
