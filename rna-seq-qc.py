@@ -98,7 +98,7 @@ temp_dir = tempfile.gettempdir()
 script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 ## Path defaults to all needed scripts and programs
-fastqc_path = "/package/FastQC_v0.11.3/"
+fastqc_path = "/package/FastQC-0.11.3/"
 trim_galore_path = "/package/trim_galore_v0.3.7/"
 rseqc_path = "/package/RSeQC-2.4/bin/"
 bowtie2_path = "/package/bowtie2-2.2.3/"
