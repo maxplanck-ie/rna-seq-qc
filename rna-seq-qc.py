@@ -68,15 +68,15 @@ if socket.gethostname() == "pc305":
     ## Test data: MiSeq_Ausma
     sys.argv = [sys.argv[0],
                 '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_HISAT_featureCounts/',
-                '--fastq-downsample', '5000',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_test/',
+                '--fastq-downsample', '500000',
                 '-g', 'mm10',
                 '-v',
                 '--trim',
                 #'--tophat_opts', '"--no-discordant --no-mixed"',
-                '--tophat_opts', '"--no-discordant"',
+                # '--tophat_opts', '"--no-discordant"',
                 '--DE', '/data/manke/kilpert/datasets/Ausma/sampleInfo.tsv',
-                '--insert-metrics', 'Picard',
+                # '--insert-metrics', 'Picard',
                 '--mapping-prg', 'HISAT',
                 #'--count-prg', 'htseq-count',
                 ]
@@ -332,12 +332,12 @@ def check_for_paired_infiles(args, indir, ext, verbose=False):
     return infiles
 
 
-def add_leading_zeros(num, length=2):
-    """
-    Add leading zeros to number.
-    """
-    padding = length - len("{}".format(num))
-    return "{}{}".format(padding*"0", num)
+# def add_leading_zeros(num, length=2):
+#     """
+#     Add leading zeros to number.
+#     """
+#     padding = length - len("{}".format(num))
+#     return "{}{}".format(padding*"0", num)
 
 
 def run_subprocess(cmd, cwd, td, shell=False, logfile=None, backcopy=True, verbose=False, keep_temp=False):
@@ -536,18 +536,18 @@ def get_strand_from_rseqc(infile, prog):
     return specificity_list[0]
 
 
-def count_fastq(infile):
-    """
-    Count the reads in a FASTQ file.
-    """
-    return int(sum(1 for line in gzip.open(infile, "r")))/4
+# def count_fastq(infile):
+#     """
+#     Count the reads in a FASTQ file.
+#     """
+#     return int(sum(1 for line in gzip.open(infile, "r")))/4
 
 
-def count_reads_in_fastq(infile):
-    """
-    Count the reads in a FASTQ file.
-    """
-    return int(subprocess.check_output("zcat {} | wc -l".format(infile), shell=True))/4
+# def count_reads_in_fastq(infile):
+#     """
+#     Count the reads in a FASTQ file.
+#     """
+#     return int(subprocess.check_output("zcat {} | wc -l".format(infile), shell=True))/4
 
 
 def get_my_vars(infile, *var_names):
@@ -808,7 +808,7 @@ def run_library_type(args, q, indir):
             os.mkdir("infer_experiment")
 
         jobs = ["{} {}infer_experiment.py --version".format(rseqc_activate, rseqc_path)]
-        q.put(Qjob(jobs, shell=False, logfile="LOG"))
+        q.put(Qjob(jobs, shell=True, logfile="LOG"))
         q.join()
 
         infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir)) if f.endswith(".genome_mapped.bam")])
