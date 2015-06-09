@@ -1,6 +1,8 @@
 ## Usage: cat DESeq2.R | /package/R-3.1.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 [BioMart.tsv]
 
 library("DESeq2")
+library("gplots")
+library("RColorBrewer")
 
 args = commandArgs(TRUE)
 ## Debug only! ################################################################
@@ -215,8 +217,7 @@ sampleDistMatrix
 rownames(sampleDistMatrix) = sprintf("%s %s", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 colnames(sampleDistMatrix) = sprintf("%s %s", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 sampleDistMatrix
-library("gplots")
-library("RColorBrewer")
+
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
 pdf("Fig5.Heatmap.pdf")
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
