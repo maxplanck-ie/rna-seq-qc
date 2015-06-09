@@ -1136,7 +1136,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} --rna-strandness {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - > {}"\
+                cmdl = "{} {} -p {} -x {} --rna-strandness {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1144,7 +1144,8 @@ def run_hisat(args, q, indir):
                                     os.path.join(cwd, bname+"/"+"metrics.txt"),
                                     os.path.join(cwd, bname+"/"+"align_summary.txt"),
                                     samtools_path,
-                                    os.path.join(cwd, bname+"/"+"accepted_hits.bam"),
+                                    samtools_path, samtools_threads, samtools_mem,
+                                    os.path.join(cwd, bname+"/"+"accepted_hits"),
                                     )
 
                 jobs = [cmdl,
@@ -1152,9 +1153,10 @@ def run_hisat(args, q, indir):
                         "cat <({}samtools view -H {}) <(echo '@PG\tCL:{}') > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.bam"), cmdl, os.path.join(cwd, bname+"/"+"header.sam")),
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
-                            .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits2.bam") ),
-                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits2.bam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam") ),
-                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")), ]
+                            .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam") ),
+                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam") ),
+                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam"), ),
+                        ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
@@ -1191,7 +1193,7 @@ def run_hisat(args, q, indir):
         if is_error:
             exit(is_error)
 
-        ## Generate links in main TopHat output folder and index files
+        ## Generate links in main HISAT output folder and index files
         for infile in infiles:
             if args.paired:
                 bname = re.sub("_R*[1|2].fastq.gz$", "", os.path.basename(infile[0]))
