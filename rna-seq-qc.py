@@ -451,7 +451,7 @@ def get_strand_from_rseqc(infile, prog):
             print infile
             exit(1)
 
-        threshold = 0.7      #min quotient threshold
+        threshold = 0.65      #min quotient threshold
 
         k = strands.keys()
         v = strands.values()
@@ -721,7 +721,7 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
 
 def run_library_type(args, q, indir):
     """
-    - Random downsampling to 100,000 reads
+    - Random downsampling to 200,000 reads
     - Bowtie2 mapping to genome -> library_type (infer_experiment; RSeQC)
     - Save a file with settings for TopHat2 (*.TopHat.txt): library-type
     """
@@ -747,7 +747,7 @@ def run_library_type(args, q, indir):
         print "In:", os.path.abspath(indir)
 
         #######################################################################
-        ## downsampling to 100,000 sequences
+        ## downsampling to 200,000 sequences
         #######################################################################
 
         logfile = "LOG"
@@ -756,7 +756,7 @@ def run_library_type(args, q, indir):
 
         infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
         for infile in infiles:
-            jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 100000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
+            jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
             time.sleep(0.1)
 
