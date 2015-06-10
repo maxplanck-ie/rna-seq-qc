@@ -1,4 +1,4 @@
-## Usage: cat DESeq2.R | /package/R-3.1.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 [BioMart.tsv]
+## Usage: cat DESeq2.R | /package/R-3.1.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 species.gene_names
 
 library("DESeq2")
 library("gplots")
@@ -214,15 +214,17 @@ sampleDists
 ## Euclidean sample distance heatmap
 sampleDistMatrix = as.matrix(sampleDists)
 sampleDistMatrix
-rownames(sampleDistMatrix) = sprintf("%s %s", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
-colnames(sampleDistMatrix) = sprintf("%s %s", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+rownames(sampleDistMatrix) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+colnames(sampleDistMatrix) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 sampleDistMatrix
 
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
 pdf("Fig5.Heatmap.pdf")
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap (Euclidean distances)",
-          keysize=1.3, margins=c(8,8))
+          keysize=1.2,
+          cex.main=3,
+          cexRow=0.8, cexCol=0.8, margins=c(8,8))
 dev.off()
 
 ## PCA
@@ -236,13 +238,17 @@ d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
 d_topx_padj
 plotdata = assay(rld)[d_topx_padj$id,]
 
+rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+
 if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
 
 pdf(sprintf("Fig6.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
 heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
           col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),
           main=sprintf("Top %d DE genes (by p-value)", topN), keysize=1,
-          margins = c(10,12))
+          margins = c(8,10),
+          cexRow=0.7, cexCol=0.9)
 dev.off()
 
 
