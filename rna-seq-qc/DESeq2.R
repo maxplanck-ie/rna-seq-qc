@@ -88,7 +88,7 @@ info
 
 ## count table
 head(assay(dds))
-write.table(assay(dds),"DESeq2.counts.tsv", sep="\t", quote=FALSE) # save to file
+write.table(assay(dds),"DESeq2.counts.tsv", sep="\t", quote=FALSE, col.names=NA) # save to file
 
 ## DE analysis
 assign("last.warning", NULL, envir = baseenv())
