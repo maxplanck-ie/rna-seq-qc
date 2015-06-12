@@ -10,7 +10,6 @@ then
     exit 1
 else
     paste <(zcat ${2} | sed '/^$/d' | paste -d "\t" - - - - ) <(zcat ${3} | sed '/^$/d' | paste -d "\t" - - - - ) \
-    | shuf \
-    | head -${1} \
+    | shuf -n ${1} \
     | tee >(cut -f1,2,3,4 | sed 's/\t/\n/g' | gzip > ${4}) >(cut -f5,6,7,8 | sed 's/\t/\n/g' | gzip > ${5}) >/dev/null
 fi
