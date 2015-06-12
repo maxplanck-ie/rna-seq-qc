@@ -69,7 +69,7 @@ if socket.gethostname() == "pc305":
     sys.argv = [sys.argv[0],
                 '-i', '/data/manke/kilpert/datasets/Ausma/',
                 '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_test/',
-                '--fastq-downsample', '500000',
+                '--fastq-downsample', '20000',
                 '-g', 'mm10',
                 '-v',
                 '--trim',
@@ -79,6 +79,7 @@ if socket.gethostname() == "pc305":
                 # '--insert-metrics', 'Picard',
                 '--mapping-prg', 'HISAT',
                 #'--count-prg', 'htseq-count',
+                #'--seed', '123',
                 ]
 
     if "--trim_galore" in sys.argv:
@@ -115,6 +116,7 @@ samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
 hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
+R_libraries_export = "export R_LIBS_USER='/data/manke/repository/scripts/rna-seq-qc/rna-seq-qc/R/x86_64-unknown-linux-gnu-library/3.2' &&"
 
 
 ## Different configurations for other physical machines
@@ -135,6 +137,7 @@ if socket.gethostname() == "pc305":
     samtools_export = ""
     ucsctools_dir_path = ""
     hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/hisat"
+    R_libraries_export = ""
 
 
 #### DEFAULT VARIABLES #################################################################################################
@@ -169,7 +172,7 @@ def parse_args():
     parser.add_argument("--overwrite", dest="overwrite", action = "store_true", default=False, help="Overwrite results in existing folders!")
     parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: {})".format(default_parallel), type=int, default=default_parallel)
     parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: {})".format(default_threads), type=int, default=default_threads)
-    parser.add_argument("--seed", dest="seed", metavar="INT", help="Random number seed", type=int, default=None)
+    parser.add_argument("--seed", dest="seed", metavar="INT", help="Random sampling seed", type=int, default=None)
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences (for testing only!)", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
     parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '--stringency 2')", type=str, default="--stringency 2")
@@ -217,8 +220,8 @@ def parse_args():
     args.error = 0
 
     ### Add
-    if args.seed is None:
-        args.seed = random.randint(12345, 987654321)
+    # if args.seed is None:
+    #     args.seed = random.randint(12345, 987654321)
 
     ## Get reference data paths from config file
     ref_cfg_file_path = os.path.join(script_path, "rna-seq-qc/{}.cfg".format(args.genome))
@@ -451,7 +454,7 @@ def get_strand_from_rseqc(infile, prog):
             print infile
             exit(1)
 
-        threshold = 0.65      #min quotient threshold
+        threshold = 0.6      #min quotient threshold
 
         k = strands.keys()
         v = strands.values()
@@ -582,9 +585,49 @@ def get_my_vars(infile, *var_names):
 
 #### FASTQ DOWNSAMPLING ################################################################################################
 
+# def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
+#     """
+#     Reduce the number of sequences in FASTQ file to n first sequences.
+#     """
+#     args.analysis_counter += 1
+#     outdir = "{}".format(analysis_name.replace(" ", "_"))
+#     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
+#
+#     if args.overwrite and os.path.isdir(outdir):
+#         shutil.rmtree(outdir)
+#
+#     #print "Outdir:", outdir
+#     if os.path.isdir(outdir):
+#         print "Output folder already present: {}".format(outdir)
+#     else:
+#         os.mkdir(outdir)
+#         os.chdir(outdir)
+#         cwd = os.getcwd()
+#
+#         print "In:", os.path.abspath(indir)
+#         infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
+#
+#         logfile = os.path.join(cwd, "LOG")
+#         with open(logfile, "w") as log:
+#             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+#
+#         for infile in infiles:
+#             jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+#             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True) )
+#             time.sleep(0.1)
+#
+#         q.join()
+#         if is_error:
+#             exit(is_error)
+#
+#         print "Out:", os.path.join(args.outdir, outdir)
+#     os.chdir(args.outdir)
+#     return os.path.join(args.outdir, outdir)
+
+
 def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
     """
-    Reduce the number of sequences in FASTQ file to n first sequences.
+    Reduce the number of sequences in FASTQ file to n first sequences (using bash shuf).
     """
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name.replace(" ", "_"))
@@ -593,7 +636,7 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
     if args.overwrite and os.path.isdir(outdir):
         shutil.rmtree(outdir)
 
-    #print "Outdir:", outdir
+    print "Outdir:", outdir
     if os.path.isdir(outdir):
         print "Output folder already present: {}".format(outdir)
     else:
@@ -609,8 +652,40 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
         for infile in infiles:
-            jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True) )
+            if not args.seed:
+                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+
+                ## just from the head of the file using shell commands
+                ##jobs = ["zcat {} | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
+
+                ## ## random
+                ## if args.paired:
+                ##     print "PE"
+                ##     bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(infile[0]))
+                ##     # print bname
+                ##
+                ##     jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
+                ##                 args.fastq_downsample,
+                ##                 infile[0],
+                ##                 infile[1],
+                ##                 os.path.join(cwd,bname+"_R1.fastq.gz"),
+                ##                 os.path.join(cwd,bname+"_R2.fastq.gz")),]
+                ## else:
+                ##     # print "SE"
+                ##     bname = re.sub(".fastq.gz$","",os.path.basename(infile))
+                ##     # print bname
+                ##
+                ##     jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {}".format(script_path,
+                ##                 args.fastq_downsample,
+                ##                 infile,
+                ##                 os.path.join(cwd,bname+".fastq.gz")),]
+                ## jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+
+            else:
+                ## print "Using seed:", args.seed
+                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True) )
             time.sleep(0.1)
 
         q.join()
@@ -1391,7 +1466,7 @@ def run_deseq2(args, q, indir):
         counts_file = os.path.join(indir, "counts.txt")
         print "In:", counts_file
 
-        jobs = ["cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
+        jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
 
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
 
