@@ -244,7 +244,7 @@ dev.off()
 
 ## PCA
 pdf("PCA.pdf")
-str(plotPCA(rld, intgroup=c("name", "condition")) )
+plotPCA(rld, intgroup=c("name", "condition"))
 dev.off()
 
 # topN genes by pvalue
