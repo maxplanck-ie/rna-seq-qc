@@ -1335,10 +1335,10 @@ def run_hisat(args, q, indir):
     if args.overwrite and os.path.isdir(outdir):
         shutil.rmtree(outdir)
 
-    if not os.path.isdir(outdir):
+    if os.path.isdir(outdir):
         print "Output folder already present: {}".format(outdir)
     else:
-        #os.mkdir(outdir)
+        os.mkdir(outdir)
         os.chdir(outdir)
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
