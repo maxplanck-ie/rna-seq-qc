@@ -1,16 +1,31 @@
-## Usage: cat DESeq2.R | /package/R-3.1.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 species.gene_names
+## Usage: cat DESeq2.R | /package/R-3.2.0/bin/R --vanilla --quiet --args setup.tsv counts.txt 0.05 species.gene_names
+
+.Library
+.Library.site
+.libPaths()
 
 library("DESeq2")
 library("gplots")
 library("RColorBrewer")
 
+sessionInfo()
+
 args = commandArgs(TRUE)
-## Debug only! ################################################################
+
+# ## Debug only! ################################################################
+# ## Ausma
 # setwd("/data/processing/kilpert/test/deseq2/")
-# args = c('/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/sampleInfo.tsv',
-#             '/data/jenuwein/group/kilpert/140731_MeRIP_Ausma/18_rna-seq-qc/featureCounts/counts.txt',
+# args = c('/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+#             '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset/htseq-count/counts.txt',
 #             '0.05',
 #             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names")
+# ## Debug only! ################################################################
+# ## Liu_GSE51403
+# setwd("/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/DESeq2/")
+# args = c('/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
+#             '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/htseq-count/counts.txt',
+#             '0.05',
+#             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/hg38.gene_names")
 ###############################################################################
 
 print("Running DESeq2 from rna-seq-qc...")
@@ -45,27 +60,18 @@ countdata = DataFrame(countdata)
 countdata = countdata[,order(names(countdata), decreasing=F)]  # order column names
 head(countdata)
 
-## extract only the columns specified in the sampleInfo
-countdata = countdata[,sampleInfo[,1]]
-head(countdata)
-
-## check if columns names (from the count table) and sample names (from the sampleInfo) match
-if ( length(setdiff(colnames(countdata), as.character(sampleInfo[,1]))) > 0 ) {
-  cat("Error! Sample names in setup table and count table do NOT match!\n")
-  cat(paste(sampleInfoFilePath, "\n"))
-  cat(paste(paste(sampleInfo[,1], sep=" ")),"\n")
-  cat(paste(countFilePath, "\n"))
-  cat(paste(paste(colnames(countdata), sep=" ")),"\n")
-  q("no", 1, FALSE) # exit code 1
-}
-
-# check if sample names are the same in the input files
+## check if sample names are the same in the input files
 if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
   cat("Error! Count table column names and setup table names do NOT match!\n")
   print(as.character(sampleInfo$name))
   print(colnames(countdata))
   quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
 }
+
+## extract only the columns specified in the sampleInfo
+countdata = countdata[,as.character(sampleInfo[,1])]
+head(countdata)
+
 
 dds = DESeqDataSetFromMatrix(
   countData = countdata,
@@ -117,7 +123,12 @@ summary(res)
 
 if (file.exists(geneNamesFilePath)) { 
   cat(paste("Gene names file found\n")) 
-  geneNames = read.csv(geneNamesFilePath, sep="\t", header=F, row.names=1, stringsAsFactors=FALSE)
+  #geneNames = read.csv(geneNamesFilePath, sep="\t", header=F, row.names=1, stringsAsFactors=FALSE)
+  geneNames = read.csv(geneNamesFilePath, sep="\t", header=F, stringsAsFactors=FALSE)
+  geneNames = geneNames[!duplicated(geneNames[,1]),]
+  rownames(geneNames) = geneNames[,1]
+  geneNames[,1] = NULL
+  head(geneNames)
   
   if (length( intersect( gsub("\\..*", "", res@rownames), rownames(geneNames) ) ) > 0) {
     cat(paste("Names matching to IDs found\n")) 
@@ -167,7 +178,11 @@ write.table(de_down,"DESeq2.down.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 # save info to metrics file
 write.table(info,"DESeq2.metrics.tsv", sep="\t", quote=FALSE, col.names=NA)
- 
+
+dim(res)
+head(res)
+tail(res)
+
 # MA plot
 pdf("Fig2.MA-plot.pdf")
 plotMA(res, alpha=fdr, ylim=c(-2,2), 
@@ -229,7 +244,7 @@ dev.off()
 
 ## PCA
 pdf("PCA.pdf")
-print(plotPCA(rld, intgroup=c("name", "condition")))
+str(plotPCA(rld, intgroup=c("name", "condition")) )
 dev.off()
 
 # topN genes by pvalue
@@ -238,8 +253,8 @@ d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
 d_topx_padj
 plotdata = assay(rld)[d_topx_padj$id,]
 
-rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
-colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+# rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+# colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 
 if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
 
