@@ -63,24 +63,42 @@ import time
 #### Development settins ######################################################
 
 if socket.gethostname() == "pc305":
-    #pass
+    pass
 
-    ## Test data: MiSeq_Ausma
-    sys.argv = [sys.argv[0],
-                '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/mm10_test/',
-                '--fastq-downsample', '20000',
-                '-g', 'mm10',
-                '-v',
-                '--trim',
-                #'--tophat_opts', '"--no-discordant --no-mixed"',
-                # '--tophat_opts', '"--no-discordant"',
-                '--DE', '/data/manke/kilpert/datasets/Ausma/sampleInfo.tsv',
-                # '--insert-metrics', 'Picard',
-                '--mapping-prg', 'HISAT',
-                #'--count-prg', 'htseq-count',
-                #'--seed', '123',
-                ]
+    # ##Test data: MiSeq_Ausma, PE, mm10
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Ausma/subset/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset/',
+    #             '--fastq-downsample', '1100000',
+    #             '-g', 'mm10',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+    #             #'--insert-metrics', 'RSeQC',
+    #             '--mapping-prg', 'HISAT',
+    #
+    #             '--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
+
+    # # Test data: Liu_GSE51403, SE, hg38
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
+    #             '--fastq-downsample', '1100000',
+    #             '-g', 'hg38',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
+    #             # '--insert-metrics', 'Picard',
+    #             #'--mapping-prg', 'HISAT',
+    #             '--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
 
     if "--trim_galore" in sys.argv:
         sys.argv2 = sys.argv
@@ -137,7 +155,8 @@ if socket.gethostname() == "pc305":
     samtools_export = ""
     ucsctools_dir_path = ""
     hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/hisat"
-    R_libraries_export = ""
+    R_libraries_export = "export R_LIBS_USER='/data/manke/repository/scripts/rna-seq-qc/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2' &&"
+
 
 
 #### DEFAULT VARIABLES #################################################################################################
@@ -180,8 +199,9 @@ def parse_args():
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast'); for parameter estimation step only (no direct effect on Tophat2 mapping!)", type=str, default="--end-to-end --fast")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '')", type=str, default="-Q 10")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string", type=str, default="--mode union")
-    parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using RSeQC (default) or Picard", type=str, default="RSeQC")
+    parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard (default) or RSeQC", type=str, default="Picard")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts (default) or htseq-count", type=str, default="featureCounts")
+    parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: auto)", type=str, default="auto")
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 (default) or HISAT", type=str, default="TopHat2")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT option string (default: '')", type=str, default="")
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
@@ -428,7 +448,184 @@ def queue_worker(q, verbose=False):
         q.task_done()
 
 
-def get_strand_from_rseqc(infile, prog):
+# def get_strand_from_rseqc(infile, prog):
+#     """
+#     Infer strand-specificity.
+#     """
+#     specificity_list = []
+#     is_first_file = True
+#
+#     with open(infile, "r") as f:
+#         strands = OrderedDict()
+#         for line in f.readlines():
+#             line = line.strip()
+#             if line.startswith('Fraction of reads explained by "'):
+#                 values = line.replace('Fraction of reads explained by "','').split('": ')
+#                 strands[values[0]] = float(values[1])
+#             if line.startswith('Fraction of reads explained by other combinations: '):
+#                 value = float(line.replace('Fraction of reads explained by other combinations: ',''))
+#                 if value >= 0.2:
+#                     print "Error! A larger fraction ({}) of reads is explained by uncommon strand combinations!".format(value)
+#                     print infile
+#                     exit(1)
+#
+#         if len(strands.keys()) != 2:
+#             print "Error! Unclear strand-specificity in:"
+#             print infile
+#             exit(1)
+#
+#         threshold = 0.6      #min quotient threshold
+#
+#         k = strands.keys()
+#         v = strands.values()
+#
+#         if prog == "rseqc":
+#             specificity = None
+#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+#                     specificity = '++,--'
+#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+#                     specificity = '+-,-+'
+#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+#                     specificity = '1++,1--,2+-,2-+'
+#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+#                     specificity = '1+-,1-+,2++,2--'
+#
+#         elif prog == "tophat":
+#             specificity = "fr-unstranded"
+#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+#                     specificity = "fr-secondstrand"
+#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+#                     specificity = "fr-firststrand"
+#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+#                     specificity = "fr-secondstrand"
+#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+#                     specificity = "fr-firststrand"
+#
+#         elif prog == "hisat":
+#             # for XS attribute tag
+#             specificity = "unstranded"
+#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+#                     specificity = "F"
+#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+#                     specificity = "R"
+#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+#                     specificity = "FR"
+#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+#                     specificity = "RF"
+#
+#         elif prog == "htseq-count":
+#             specificity = "no"
+#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+#                     specificity = "yes"
+#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+#                     specificity = "reverse"
+#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+#                     specificity = "yes"
+#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+#                     specificity = "reverse"
+#
+#         elif prog == "featureCounts":
+#             specificity = "0"
+#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+#                     specificity = "1"
+#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+#                     specificity = "2"
+#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+#                     specificity = "1"
+#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+#                     specificity = "2"
+#
+#     if is_first_file:
+#         specificity_list.append(specificity)
+#     else:
+#         is_first_file = False
+#         if specificity not in specificity_list:
+#             print "Error! Multiple strand specificities detected within different samples."
+#             print " ".join(specificity_list)
+#             exit(1)
+#         else:
+#             specificity_list.append(specificity)
+#
+#     return specificity_list[0]
+
+
+
+def convert_library_type(library_type, prog, paired):
+    """
+    Convert TopHat library type to other program naming convention.
+    """
+    new = None
+
+    if prog == "TopHat2":
+        new == library_type
+
+
+    elif prog == "RSeQC":
+        if library_type == 'fr-firststrand' and paired==True:
+            new = '"1+-,1-+,2++,2--"'
+        elif library_type == 'fr-secondstrand' and paired==True:
+            new = '"1++,1--,2+-,2-+"'
+        elif library_type == 'fr-firststrand' and paired==False:
+            new = '"+-,-+"'
+        elif library_type == 'fr-secondstrand' and paired==False:
+            new = '"++,--"'
+        elif library_type == 'fr-unstranded':
+            new = ''
+
+
+    elif prog == "HISAT":
+        if library_type == 'fr-firststrand' and paired==True:
+            new = 'RF'
+        elif library_type == 'fr-secondstrand' and paired==True:
+            new = 'FR'
+        elif library_type == 'fr-firststrand' and paired==False:
+            new = 'R'
+        elif library_type == 'fr-secondstrand' and paired==False:
+            new = 'F'
+        elif library_type == 'fr-unstranded':
+            new = 'unstranded'
+
+
+    elif prog == "htseq-count":
+        if library_type == 'fr-firststrand' and paired==True:
+            new = 'reverse'
+        elif library_type == 'fr-secondstrand' and paired==True:
+            new = 'yes'
+        elif library_type == 'fr-firststrand' and paired==False:
+            new = 'reverse'
+        elif library_type == 'fr-secondstrand' and paired==False:
+            new = 'yes'
+        elif library_type == 'fr-unstranded':
+            new = 'no'
+
+
+    elif prog == "featureCounts":
+        if library_type == 'fr-firststrand' and paired==True:
+            new = '2'
+        elif library_type == 'fr-secondstrand' and paired==True:
+            new = '1'
+        elif library_type == 'fr-firststrand' and paired==False:
+            new = '2'
+        elif library_type == 'fr-secondstrand' and paired==False:
+            new = '1'
+        elif library_type == 'fr-unstranded':
+            new = '0'
+
+    return new
+
+
+
+def get_library_type_from_rseqc(infile):
     """
     Infer strand-specificity.
     """
@@ -459,71 +656,17 @@ def get_strand_from_rseqc(infile, prog):
         k = strands.keys()
         v = strands.values()
 
-        if prog == "rseqc":
-            specificity = None
-            if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-                if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-                    specificity = '++,--'
-                elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-                    specificity = '+-,-+'
-            if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-                if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-                    specificity = '1++,1--,2+-,2-+'
-                elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-                    specificity = '1+-,1-+,2++,2--'
-
-        elif prog == "tophat":
-            specificity = "fr-unstranded"
-            if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-                if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-                    specificity = "fr-secondstrand"
-                elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-                    specificity = "fr-firststrand"
-            if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-                if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-                    specificity = "fr-secondstrand"
-                elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-                    specificity = "fr-firststrand"
-
-        elif prog == "hisat":
-            # for XS attribute tag
-            specificity = "unstranded"
-            if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-                if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-                    specificity = "F"
-                elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-                    specificity = "R"
-            if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-                if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-                    specificity = "FR"
-                elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-                    specificity = "RF"
-
-        elif prog == "htseq-count":
-            specificity = "no"
-            if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-                if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-                    specificity = "yes"
-                elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-                    specificity = "reverse"
-            if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-                if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-                    specificity = "yes"
-                elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-                    specificity = "reverse"
-
-        elif prog == "featureCounts":
-            specificity = "0"
-            if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-                if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-                    specificity = "1"
-                elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-                    specificity = "2"
-            if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-                if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-                    specificity = "1"
-                elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-                    specificity = "2"
+        specificity = "fr-unstranded"
+        if '++,--' in strands.keys() and '+-,-+' in strands.keys():
+            if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
+                specificity = "fr-secondstrand"
+            elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
+                specificity = "fr-firststrand"
+        if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
+            if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
+                specificity = "fr-secondstrand"
+            elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
+                specificity = "fr-firststrand"
 
     if is_first_file:
         specificity_list.append(specificity)
@@ -539,19 +682,6 @@ def get_strand_from_rseqc(infile, prog):
     return specificity_list[0]
 
 
-# def count_fastq(infile):
-#     """
-#     Count the reads in a FASTQ file.
-#     """
-#     return int(sum(1 for line in gzip.open(infile, "r")))/4
-
-
-# def count_reads_in_fastq(infile):
-#     """
-#     Count the reads in a FASTQ file.
-#     """
-#     return int(subprocess.check_output("zcat {} | wc -l".format(infile), shell=True))/4
-
 
 def get_my_vars(infile, *var_names):
     """
@@ -563,11 +693,14 @@ def get_my_vars(infile, *var_names):
             line = line.strip()
             if line:
                 c = line.split()
-                if c[0] not in values:
-                    values[c[0]] = c[1]
+                if len(c) != 2:
+                    continue
                 else:
-                    print "Error! Variables names exist multiple times:", c[0]
-                    exit(1)
+                    if c[0] not in values:
+                        values[c[0]] = c[1]
+                    else:
+                        print "Error! Variables names exist multiple times:", c[0]
+                        exit(1)
     values_list = []
     for name in var_names:
         if name in values.keys():
@@ -584,46 +717,6 @@ def get_my_vars(infile, *var_names):
 #### TOOLS #############################################################################################################
 
 #### FASTQ DOWNSAMPLING ################################################################################################
-
-# def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
-#     """
-#     Reduce the number of sequences in FASTQ file to n first sequences.
-#     """
-#     args.analysis_counter += 1
-#     outdir = "{}".format(analysis_name.replace(" ", "_"))
-#     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
-#
-#     if args.overwrite and os.path.isdir(outdir):
-#         shutil.rmtree(outdir)
-#
-#     #print "Outdir:", outdir
-#     if os.path.isdir(outdir):
-#         print "Output folder already present: {}".format(outdir)
-#     else:
-#         os.mkdir(outdir)
-#         os.chdir(outdir)
-#         cwd = os.getcwd()
-#
-#         print "In:", os.path.abspath(indir)
-#         infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
-#
-#         logfile = os.path.join(cwd, "LOG")
-#         with open(logfile, "w") as log:
-#             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
-#
-#         for infile in infiles:
-#             jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
-#             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True) )
-#             time.sleep(0.1)
-#
-#         q.join()
-#         if is_error:
-#             exit(is_error)
-#
-#         print "Out:", os.path.join(args.outdir, outdir)
-#     os.chdir(args.outdir)
-#     return os.path.join(args.outdir, outdir)
-
 
 def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
     """
@@ -653,34 +746,13 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
 
         for infile in infiles:
             if not args.seed:
-                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+                ##jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+
+                ## or:
 
                 ## just from the head of the file using shell commands
-                ##jobs = ["zcat {} | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
-
-                ## ## random
-                ## if args.paired:
-                ##     print "PE"
-                ##     bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(infile[0]))
-                ##     # print bname
-                ##
-                ##     jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
-                ##                 args.fastq_downsample,
-                ##                 infile[0],
-                ##                 infile[1],
-                ##                 os.path.join(cwd,bname+"_R1.fastq.gz"),
-                ##                 os.path.join(cwd,bname+"_R2.fastq.gz")),]
-                ## else:
-                ##     # print "SE"
-                ##     bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                ##     # print bname
-                ##
-                ##     jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {}".format(script_path,
-                ##                 args.fastq_downsample,
-                ##                 infile,
-                ##                 os.path.join(cwd,bname+".fastq.gz")),]
-                ## jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
-
+                jobs = ["zcat {} | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
+                ## Note that there is a not misleading "gzip: stdout: Broken pipe" message. The output is fine though!!!
             else:
                 ## print "Using seed:", args.seed
                 jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
@@ -792,14 +864,17 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
     return os.path.join(args.outdir, outdir)
 
 
-#### strand rule ###########################################################################
+#### library_type ###########################################################################
 
 def run_library_type(args, q, indir):
     """
-    - Random downsampling to 200,000 reads
+    - Random downsampling to n=100,000 reads
     - Bowtie2 mapping to genome -> library_type (infer_experiment; RSeQC)
     - Save a file with settings for TopHat2 (*.TopHat.txt): library-type
     """
+
+    n = 100000  # number of downsampling reads
+
     analysis_name = "library_type"
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name)
@@ -816,123 +891,176 @@ def run_library_type(args, q, indir):
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
 
-        with open(logfile, "a+") as log:
-            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+        with open(logfile, "w") as log:
+                log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
         print "In:", os.path.abspath(indir)
+        infiles = check_for_paired_infiles(args, indir, ".fastq.gz")
 
         #######################################################################
-        ## downsampling to 200,000 sequences
+        ## User defined library type
         #######################################################################
+        if args.library_type != 'auto':
+            library_type = args.library_type
+            print "User defined library type:", library_type
+            with open(logfile, "a") as log:
+                log.write("User defined library type: {}\n\n".format(library_type))
 
-        logfile = "LOG"
-        with open(logfile, "w") as log:
-            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
-
-        infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
-        for infile in infiles:
-            jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-            time.sleep(0.1)
-
-        q.join()
-        if is_error:
-            exit(is_error)
-
-        ######################################################################
-        # RSeQC infer_experiment (strand specificity) on reads mapped to the genome
-        ######################################################################
-
-        ## Bowtie2 mapping to genome (for esimating strand specificity only!!!)
-        print "CWD:", os.getcwd()
-        infiles = check_for_paired_infiles(args, os.getcwd(), ".fastq.gz")
-
-        if args.paired:
-            for pair in infiles:
-                bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
-
-                jobs = ["{}bowtie2 -x {} -1 {} -2 {} --threads {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.genome_mapped"\
-                         .format(bowtie2_path, args.genome_index, pair[0], pair[1], args.threads, args.bowtie_opts,
-                         samtools_path,
-                         samtools_path, samtools_threads, samtools_mem, bname),
-                        "rm {} {}".format(pair[0], pair[1]),]
-
-                #q.put(Qjob(jobs, shell=True, logfile="LOG"))
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
-                time.sleep(0.1)
+        #######################################################################
+        ## Automatic detection of library type
+        #######################################################################
         else:
+            print "Autodetecting library type..."
+
+            ###################################################################
+            ## downsampling
+            ###################################################################
+
+            if not args.seed:
+                if args.paired:
+                    for pair in infiles:
+                        # print "PE"
+                        bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
+                        jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
+                                    n,
+                                    pair[0],
+                                    pair[1],
+                                    os.path.join(cwd,bname+"_R1.fastq.gz"),
+                                    os.path.join(cwd,bname+"_R2.fastq.gz")),]
+                        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+                else:
+                    for infile in infiles:
+                        # print "SE"
+                        bname = re.sub(".fastq.gz$","",os.path.basename(infile))
+                        jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_se.sh {} {} {}".format(script_path,
+                                    n,
+                                    infile,
+                                    os.path.join(cwd,bname+".fastq.gz")),]
+                        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+            else:
+                infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
+                print infiles
+
+                for infile in infiles:
+                    jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
+
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+                    time.sleep(0.1)
+
+            q.join()
+            if is_error:
+                exit(is_error)
+
+
+            ######################################################################
+            ## Bowtie2 mapping to genome (for esimating strand specificity only!!!)
+            ######################################################################
+            print "CWD:", os.getcwd()
+            infiles = check_for_paired_infiles(args, os.getcwd(), ".fastq.gz")
+
+            if args.paired:
+                for pair in infiles:
+                    bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
+
+                    jobs = ["{}bowtie2 -x {} -1 {} -2 {} --threads {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.genome_mapped"\
+                             .format(bowtie2_path, args.genome_index, pair[0], pair[1], args.threads, args.bowtie_opts,
+                             samtools_path,
+                             samtools_path, samtools_threads, samtools_mem, bname),
+                            "rm {} {}".format(pair[0], pair[1]),]
+
+                    #q.put(Qjob(jobs, shell=True, logfile="LOG"))
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
+                    time.sleep(0.1)
+            else:
+                for infile in infiles:
+                    bname = re.sub(".fastq.gz$","",os.path.basename(infile))
+
+                    jobs = ["{}bowtie2 -x {} -U {} -p {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.genome_mapped"\
+                             .format(bowtie2_path, args.genome_index, infile, args.threads, args.bowtie_opts,
+                             samtools_path,
+                             samtools_path, samtools_threads, samtools_mem, bname),
+                            "rm {}".format(infile),
+                            ]
+
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
+                    time.sleep(0.1)
+            q.join()
+            if is_error:
+                exit(is_error)
+
+
+            ###################################################################
+            # RSeQC infer_experiment
+            ###################################################################
+            if not os.path.isdir("infer_experiment"):
+                os.mkdir("infer_experiment")
+
+            jobs = ["{} {}infer_experiment.py --version".format(rseqc_activate, rseqc_path)]
+            q.put(Qjob(jobs, shell=True, logfile="LOG"))
+            q.join()
+
+            infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir)) if f.endswith(".genome_mapped.bam")])
             for infile in infiles:
-                bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-
-                jobs = ["{}bowtie2 -x {} -U {} -p {} {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}.genome_mapped"\
-                         .format(bowtie2_path, args.genome_index, infile, args.threads, args.bowtie_opts,
-                         samtools_path,
-                         samtools_path, samtools_threads, samtools_mem, bname),
-                        "rm {}".format(infile),
+                print infile
+                bname = " ".join(infile.split(".")[:-2])
+                jobs = ["{} {}infer_experiment.py -i {} -r {} > {}"\
+                            .format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")),
+                        "rm {}.genome_mapped.bam".format(os.path.join(args.outdir, outdir, bname)),
                         ]
-
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
                 time.sleep(0.1)
-        q.join()
-        if is_error:
-            exit(is_error)
+            q.join()
 
+            ###################################################################
+            ## combining results
+            ###################################################################
 
-        # RSeQC infer_experiment
-        if not os.path.isdir("infer_experiment"):
-            os.mkdir("infer_experiment")
+            library_type_dic = {}
 
-        jobs = ["{} {}infer_experiment.py --version".format(rseqc_activate, rseqc_path)]
-        q.put(Qjob(jobs, shell=True, logfile="LOG"))
-        q.join()
+            infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir, "infer_experiment")) if f.endswith(".infer_experiment.txt")])
+            for infile in infiles:
+                bname = " ".join(infile.split(".")[:-2])
 
-        infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir)) if f.endswith(".genome_mapped.bam")])
-        for infile in infiles:
-            print infile
-            bname = " ".join(infile.split(".")[:-2])
-            jobs = ["{} {}infer_experiment.py -i {} -r {} > {}"\
-                        .format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")),
-                    "rm {}.genome_mapped.bam".format(os.path.join(args.outdir, outdir, bname)),
-                    ]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
-            time.sleep(0.1)
-        q.join()
+                # library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "tophat")
+                library_type = get_library_type_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname))
 
-        for infile in infiles:
-            bname = " ".join(infile.split(".")[:-2])
-            print bname
+                if library_type not in library_type_dic:
+                    library_type_dic[library_type] = [bname]
+                else:
+                    library_type_dic[library_type].append(bname)
 
-            ## Make settings file for TopHat
-            library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "tophat")
-            with open("{}.library_type.txt".format(bname), "w") as f:
-                f.write("TopHat2\t{}\n".format(library_type))
+            print "Using TopHat2 naming scheme"
 
-            ## Make settings file for HISAT
-            library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "hisat")
-            with open("{}.library_type.txt".format(bname), "a") as f:
-                f.write("HISAT\t{}\n".format(library_type))
+            for k,v in library_type_dic.iteritems():
+                print "{} ({}): {}".format(k, len(v), " ".join(sorted(v)))
 
-            ## Make settings file for htseq-count
-            library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "htseq-count")
-            with open("{}.library_type.txt".format(bname), "a") as f:
-                f.write("htseq-count\t{}\n".format(library_type))
+            library_type = sorted(library_type_dic.items(), key=lambda x: len(x[1]), reverse=True)[0][0]
+            print "Auto library type:", library_type
+            with open(logfile, "a") as log:
+                log.write("Auto library type: {}\n\n".format(library_type))
 
-            ## Make settings file for featureCounts
-            library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "featureCounts")
-            with open("{}.library_type.txt".format(bname), "a") as f:
-                f.write("featureCounts\t{}\n".format(library_type))
+        ## write librariy type(s) to file
+        with open(os.path.join(cwd, "library_type.txt"), "w") as f:
+            f.write("TopHat2\t{}\n".format(library_type))
+            f.write("RSeQC\t{}\n".format(convert_library_type( library_type, 'RSeQC', args.paired ) ))
+            f.write("HISAT\t{}\n".format(convert_library_type( library_type, 'HISAT', args.paired ) ))
+            f.write("htseq-count\t{}\n".format(convert_library_type( library_type, 'htseq-count', args.paired ) ))
+            f.write("featureCounts\t{}\n".format(convert_library_type( library_type, 'featureCounts', args.paired ) ))
 
-    print "Out:", os.path.join(args.outdir, outdir)
+        print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
     return os.path.join(args.outdir, outdir)
+
 
 
 def run_distance_metrics(args, q, indir):
     """
     - Random downsampling to 1,000,000 reads for TopHat2
     - Bowtie2 mapping to transcriptome -> inner_distance (RSeQC) or InsertSizeMetrics (Picard) + CollectAlignmentSummaryMetrics (Picard)
-    - Save a file with settings for TopHat2 (*.TopHat.txt): mate-inner-dist, mate-std-dev
+    - Save a setting file: mate-inner-dist, mate-std-dev
     """
+    n = 1000000  # number of downsampling reads
+
     analysis_name = "distance_metrics"
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name)
@@ -949,32 +1077,53 @@ def run_distance_metrics(args, q, indir):
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
 
-        with open(logfile, "a+") as log:
-            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+        with open(logfile, "w") as log:
+                log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
         print "In:", os.path.abspath(indir)
+        infiles = check_for_paired_infiles(args, indir, ".fastq.gz")
 
-        #######################################################################
-        ## downsampling to 1000000 sequences
-        #######################################################################
+        ###################################################################
+        ## downsampling
+        ###################################################################
+        if not args.seed:
+            if args.paired:
+                for pair in infiles:
+                    # print "PE"
+                    bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
+                    jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
+                                n,
+                                pair[0],
+                                pair[1],
+                                os.path.join(cwd,bname+"_R1.fastq.gz"),
+                                os.path.join(cwd,bname+"_R2.fastq.gz")),]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+            else:
+                for infile in infiles:
+                    # print "SE"
+                    bname = re.sub(".fastq.gz$","",os.path.basename(infile))
+                    jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_se.sh {} {} {}".format(script_path,
+                                n,
+                                infile,
+                                os.path.join(cwd,bname+".fastq.gz")),]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+        else:
+            infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
+            print infiles
 
-        logfile = "LOG"
-        with open(logfile, "w") as log:
-            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+            for infile in infiles:
+                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
 
-        infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
-        for infile in infiles:
-            jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 1000000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-            time.sleep(0.1)
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+                time.sleep(0.1)
 
         q.join()
         if is_error:
             exit(is_error)
 
-        #######################################################################
-        ## Inner distance (for paired reads only!)
-        #######################################################################
+        ######################################################################
+        # Bowtie2 mapping to transcriptome
+        ######################################################################
 
         infiles = check_for_paired_infiles(args, os.getcwd(), ".fastq.gz")
 
@@ -1035,7 +1184,7 @@ def run_distance_metrics(args, q, indir):
                             .format( picardtools_path,
                                      os.path.join(cwd, infile),
                                      os.path.join(cwd, "AlignmentSummaryMetrics", bname+".AlignmentSummaryMetrics.txt")),
-                        "rm {}".format(os.path.join(cwd, infile)),
+                        #"rm {}".format(os.path.join(cwd, infile)),
                         ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
@@ -1055,7 +1204,7 @@ def run_distance_metrics(args, q, indir):
                     mean_read_length = float(f.readlines()[9].split()[15])
                 mate_inner_dist = "{:.0f}".format(mean_insert_size - mean_read_length*2)
                 mate_std_dev = "{:.0f}".format(standard_deviation)
-                with open("{}.TopHat2.txt".format(bname), "a") as f:
+                with open("{}.TopHat2.txt".format(bname), "w") as f:
                     f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
                     f.write("mate-std-dev\t{}\n".format(mate_std_dev))
         else:
@@ -1075,7 +1224,7 @@ def run_distance_metrics(args, q, indir):
                                         args.bed,
                                         #bname) ]
                                         os.path.join(cwd, "inner_distance", bname+".inner_distance.summary.txt")),
-                            "rm {}".format(os.path.join(cwd, infile)),
+                            #"rm {}".format(os.path.join(cwd, infile)),
                             ]
                     print jobs
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
@@ -1088,8 +1237,9 @@ def run_distance_metrics(args, q, indir):
                 bname = " ".join(infile.split(".")[:-2])
                 with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
                     lines = f.readlines()
-                    mate_inner_dist = "{:.0f}".format(float(lines[1]))
-                    mate_std_dev = "{:.0f}".format(float(lines[5]))
+                    e = lines[1].split()
+                    mate_inner_dist = "{:.0f}".format(float(e[1]))
+                    mate_std_dev = "{:.0f}".format(float(e[3]))
                 with open("{}.TopHat2.txt".format(bname), "w") as f:
                     f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
                     f.write("mate-std-dev\t{}\n".format(mate_std_dev))
@@ -1127,12 +1277,14 @@ def run_tophat(args, q, indir):
         with open(logfile, "w") as log:
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
+        ## read library type from file
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "TopHat2" )
+
         if args.paired:
             for pair in infiles:
                 bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
 
                 ## read metrics from file
-                library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "TopHat2" )
                 mate_inner_dist, mate_std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate-inner-dist", "mate-std-dev" )
 
                 jobs = ["{} {} {}tophat2 {} --num-threads {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}"\
@@ -1145,10 +1297,6 @@ def run_tophat(args, q, indir):
         else:
             for infile in infiles:
                 bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
-
-                ## read metrics from file
-                library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "TopHat2" )
-                mate_inner_dist, mate_std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate-inner-dist", "mate-std-dev" )
 
                 jobs = ["{} {} {}tophat2 {} --num-threads {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
                             .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
@@ -1201,17 +1349,22 @@ def run_hisat(args, q, indir):
         with open(logfile, "w") as log:
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
+        ## read library type from file
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "HISAT" )
+        if library_type == "unstranded":
+            library_type = ""
+        else:
+            library_type = "--rna-strandness "+library_type
+
+        ## PE
         if args.paired:
             for pair in infiles:
                 bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
 
-                ## read metrics from file
-                library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "HISAT" )
-
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} --rna-strandness {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{} {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1235,13 +1388,15 @@ def run_hisat(args, q, indir):
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
+        ## SE
         else:
             for infile in infiles:
                 bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
 
-                library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "HISAT" )
+                if not os.path.isdir( os.path.join(cwd, bname) ):
+                    os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} --rna-strandness {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - > {}"\
+                cmdl = "{} {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - > {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
@@ -1253,13 +1408,14 @@ def run_hisat(args, q, indir):
                                     )
 
                 jobs = [cmdl,
-                        ## add command line to bam header
+                        # add command line to bam header
                         "cat <({}samtools view -H {}) <(echo '@PG\tCL:{}') > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.bam"), cmdl, os.path.join(cwd, bname+"/"+"header.sam")),
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits2.bam") ),
                         "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits2.bam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam") ),
-                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")), ]
+                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")),
+                        ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
@@ -1311,11 +1467,11 @@ def run_htseq_count(args, q, indir):
         with open(logfile, "w") as log:
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
+        ## read library type
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "htseq-count" )
+
         for infile in infiles:
             bname = re.sub(".bam$","",os.path.basename(infile))
-
-            ## read metrics from file
-            library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "htseq-count" )
 
             jobs = [ "{samtools_path}samtools sort -n {infile} -o {bam_outfile} -@ {threads} -m {mem}G | {samtools_path}samtools view -h - | {htseq_count_path}htseq-count {htseq_count_opts} --stranded={strand} - {gtf} > {outfile}" \
                       .format(samtools_path=samtools_path,
@@ -1391,11 +1547,12 @@ def run_featureCounts(args, q, indir):
         q.put(Qjob(jobs, logfile="LOG", shell=False))
         q.join()
 
+
+        ## read library type
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "featureCounts" )
+
         for infile in infiles:
             bname = re.sub(".bam$","",os.path.basename(infile))
-
-            ## read metrics from file
-            library_type = get_my_vars( os.path.join(args.outdir, "library_type", bname+".library_type.txt"), "featureCounts" )
 
             #featureCounts -T 5 -t exon -g gene_id -a annotation.gtf -o counts.txt mapping_results_SE.sam
             if args.paired:
@@ -1466,8 +1623,7 @@ def run_deseq2(args, q, indir):
         counts_file = os.path.join(indir, "counts.txt")
         print "In:", counts_file
 
-        jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
-
+        jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
 
         q.join()
@@ -1765,7 +1921,7 @@ def main():
     ### Output dir
     ##print "Outdir:", args.outdir
     if not os.path.isdir(args.outdir):
-        os.mkdir(args.outdir)
+        os.makedirs(args.outdir)
     os.chdir(args.outdir)
 
     args.analysis_counter = 0   # Counter for analyzes conducted
@@ -1787,11 +1943,12 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    ## Run FastQC
-    t1 = datetime.datetime.now()
-    run_fastqc(args, q, indir)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
+    # ## Run FastQC
+    # if args.trim:
+    #     t1 = datetime.datetime.now()
+    #     run_fastqc(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
 
     ## Run Trim Galore!
     if args.trim:
