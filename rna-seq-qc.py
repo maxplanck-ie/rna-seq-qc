@@ -94,8 +94,8 @@ if socket.gethostname() == "pc305":
     #             #'--tophat_opts', '"--no-discordant --no-mixed"',
     #             '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
     #             # '--insert-metrics', 'Picard',
-    #             #'--mapping-prg', 'HISAT',
-    #             '--count-prg', 'htseq-count',
+    #             '--mapping-prg', 'HISAT',
+    #             #'--count-prg', 'htseq-count',
     #             #'--seed', '12345',
     #             #'--library-type', 'fr-firststrand',
     #             ]
@@ -1335,10 +1335,10 @@ def run_hisat(args, q, indir):
     if args.overwrite and os.path.isdir(outdir):
         shutil.rmtree(outdir)
 
-    if os.path.isdir(outdir):
+    if not os.path.isdir(outdir):
         print "Output folder already present: {}".format(outdir)
     else:
-        os.mkdir(outdir)
+        #os.mkdir(outdir)
         os.chdir(outdir)
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
@@ -1396,7 +1396,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - > {}"\
+                cmdl = "{} {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
@@ -1404,6 +1404,7 @@ def run_hisat(args, q, indir):
                                     os.path.join(cwd, bname+"/"+"metrics.txt"),
                                     os.path.join(cwd, bname+"/"+"align_summary.txt"),
                                     samtools_path,
+                                    samtools_path, samtools_threads, samtools_mem,
                                     os.path.join(cwd, bname+"/"+"accepted_hits.bam"),
                                     )
 
