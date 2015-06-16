@@ -1405,7 +1405,7 @@ def run_hisat(args, q, indir):
                                     os.path.join(cwd, bname+"/"+"align_summary.txt"),
                                     samtools_path,
                                     samtools_path, samtools_threads, samtools_mem,
-                                    os.path.join(cwd, bname+"/"+"accepted_hits.bam"),
+                                    os.path.join(cwd, bname+"/"+"accepted_hits"),
                                     )
 
                 jobs = [cmdl,
