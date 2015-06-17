@@ -14,19 +14,20 @@ args = commandArgs(TRUE)
 
 # ## Debug only! ################################################################
 # ## Ausma
-# setwd("/data/processing/kilpert/test/deseq2/")
-# args = c('/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+# setwd("/data/manke/kilpert/datasets/Ausma/subset/")
+# args = c('/data/manke/kilpert/datasets/Ausma/subset/subset/sampleInfo.tsv',
 #             '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset/htseq-count/counts.txt',
 #             '0.05',
 #             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names")
 # ## Debug only! ################################################################
 # ## Liu_GSE51403
-# setwd("/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/DESeq2/")
+# setwd("/data/manke/kilpert/datasets/Liu_GSE51403/subset/")
 # args = c('/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
 #             '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/htseq-count/counts.txt',
 #             '0.05',
 #             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/hg38.gene_names")
 ###############################################################################
+
 
 print("Running DESeq2 from rna-seq-qc...")
 
@@ -60,17 +61,25 @@ countdata = DataFrame(countdata)
 countdata = countdata[,order(names(countdata), decreasing=F)]  # order column names
 head(countdata)
 
-## check if sample names are the same in the input files
+## 1st check: if names of the setup table are subset of the count matrix column names
+if ( ! all( is.element(sampleInfo[,1], colnames(countdata)) ) ) {
+  cat("Error! Count table column names and setup table names do NOT match!\n")
+  print(as.character(sampleInfo[,1]))
+  print(colnames(countdata))
+  quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
+}
+
+## extract only the columns specified in the setup table
+countdata = countdata[,as.character(sampleInfo[,1])]
+head(countdata)
+
+## 2nd: check if the ORDER of sample names matches as well
 if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
   cat("Error! Count table column names and setup table names do NOT match!\n")
   print(as.character(sampleInfo$name))
   print(colnames(countdata))
   quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
 }
-
-## extract only the columns specified in the sampleInfo
-countdata = countdata[,as.character(sampleInfo[,1])]
-head(countdata)
 
 
 dds = DESeqDataSetFromMatrix(
