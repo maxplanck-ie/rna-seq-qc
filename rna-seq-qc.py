@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-__version__ = "rna-seq-qc v0.6.0"
+__version__ = "rna-seq-qc v0.6.1"
 
 
 __description__ = """
@@ -9,7 +9,7 @@ __description__ = """
 
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-    Fabian Kilpert - June 16, 2015
+    Fabian Kilpert - June 17, 2015
     email: kilpert@ie-freiburg.mpg.de
 
     This software is distributed WITHOUT ANY WARRANTY!
@@ -83,22 +83,22 @@ if socket.gethostname() == "pc305":
     #             #'--library-type', 'fr-firststrand',
     #             ]
 
-    # # Test data: Liu_GSE51403, SE, hg38
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
-    #             '--fastq-downsample', '1100000',
-    #             '-g', 'hg38',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
-    #             # '--insert-metrics', 'Picard',
-    #             '--mapping-prg', 'HISAT',
-    #             #'--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
+    # Test data: Liu_GSE51403, SE, hg38
+    sys.argv = [sys.argv[0],
+                '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
+                '--fastq-downsample', '1100000',
+                '-g', 'hg38',
+                '-v',
+                #'--trim',
+                #'--tophat_opts', '"--no-discordant --no-mixed"',
+                '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
+                # '--insert-metrics', 'Picard',
+                '--mapping-prg', 'HISAT',
+                #'--count-prg', 'htseq-count',
+                #'--seed', '12345',
+                #'--library-type', 'fr-firststrand',
+                ]
 
     if "--trim_galore" in sys.argv:
         sys.argv2 = sys.argv
@@ -581,6 +581,8 @@ def convert_library_type(library_type, prog, paired):
             new = '"++,--"'
         elif library_type == 'fr-unstranded':
             new = ''
+        else:
+            new = ''
 
 
     elif prog == "HISAT":
@@ -706,8 +708,9 @@ def get_my_vars(infile, *var_names):
         if name in values.keys():
             values_list.append(values[name])
         else:
-            print "Error! Requested variable does NOT exist in file:", name
-            exit(1)
+            #print "Error! Requested variable does NOT exist in file:", name
+            #exit(1)
+            values_list.append(None)
     if len(values_list) == 1:
         return values_list[0]
     else:
@@ -1659,6 +1662,8 @@ def run_rseqc(args, q, indir):
 
     #print "In:", os.path.abspath(indir)
 
+    strand_rule = convert_library_type( get_my_vars(os.path.join(args.outdir,"library_type","library_type.txt"),"RSeQC"), 'RSeQC', args.paired )
+
     infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".bam")])
 
     with open(logfile, "a+") as log:
@@ -1685,7 +1690,7 @@ def run_rseqc(args, q, indir):
             os.mkdir("bam2wig")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
+
                 if strand_rule is not None:
                     jobs = ["{} {}bam2wig.py --strand='{}' -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_activate, rseqc_path, strand_rule, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
                 else:
@@ -1848,8 +1853,8 @@ def run_rseqc(args, q, indir):
             os.mkdir("RPKM_count")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
-                if strand_rule is not None:
+
+                if strand_rule:
                     jobs = [ "export PATH={}:$PATH && {} {}RPKM_count.py --strand='{}' --skip-multi-hits -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed,  os.path.join(cwd, "RPKM_count", bname)+ ".RPKM") ]
                 else:
                     jobs = [ "export PATH={}:$PATH && {} {}RPKM_count.py --skip-multi-hits -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_count", bname)+".RPKM") ]
@@ -1865,8 +1870,8 @@ def run_rseqc(args, q, indir):
             os.mkdir("RPKM_saturation")
             for infile in infiles:
                 bname = re.sub(".bam$","",os.path.basename(infile))
-                strand_rule = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname),"rseqc")
-                if strand_rule is not None:
+
+                if strand_rule:
                     jobs =  [ "export PATH={}:$PATH && {} {}RPKM_saturation.py --strand='{}' -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, strand_rule, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
                 else:
                     jobs =  [ "export PATH={}:$PATH && {} {}RPKM_saturation.py -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
