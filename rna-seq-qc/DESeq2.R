@@ -6,6 +6,7 @@
 
 library("DESeq2")
 library("gplots")
+library("ggplot2")
 library("RColorBrewer")
 
 sessionInfo()
@@ -252,9 +253,21 @@ heatmap.2(sampleDistMatrix,trace="none",col=colours,
 dev.off()
 
 ## PCA
-pdf("PCA.pdf")
-plotPCA(rld, intgroup=c("name", "condition"))
-dev.off()
+percentVar = round(100 * attr(data, "percentVar"))
+ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
+  geom_hline(aes(yintercept=0), colour="grey") +
+  geom_vline(aes(vintercept=0), colour="grey") +
+  geom_point(size=5) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  theme_bw(base_size = 14) +
+  ggtitle("PCA\n")
+ggsave(file=sprintf("PCA.pdf"))
+
+##pdf("PCA.pdf")
+##plotPCA(rld, intgroup=c("name", "condition"))
+##dev.off()
+
 
 # topN genes by pvalue
 d = data.frame(id=rownames(res), padj=res$padj)
