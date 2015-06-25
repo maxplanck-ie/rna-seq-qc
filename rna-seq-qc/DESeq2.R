@@ -255,6 +255,7 @@ heatmap.2(sampleDistMatrix,trace="none",col=colours,
 dev.off()
 
 ## PCA
+data <- plotPCA(rld, intgroup=c("name", "condition"), returnData=TRUE)
 percentVar = round(100 * attr(data, "percentVar"))
 ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
   geom_hline(aes(yintercept=0), colour="grey") +
