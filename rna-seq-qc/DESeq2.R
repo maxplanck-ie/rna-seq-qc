@@ -249,7 +249,9 @@ heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap (Euclidean distances)",
           keysize=1.2,
           cex.main=3,
-          cexRow=0.8, cexCol=0.8, margins=c(8,8))
+          cexRow=0.8, cexCol=0.8, margins=c(8,8),
+          cellnote=round(sampleDistMatrix,1),
+          notecol="black")
 dev.off()
 
 ## PCA
