@@ -271,12 +271,13 @@ ggsave(file=sprintf("PCA.pdf"))
 ##plotPCA(rld, intgroup=c("name", "condition"))
 ##dev.off()
 
-
 # topN genes by pvalue
-d = data.frame(id=rownames(res), padj=res$padj)
+d = data.frame(id=rownames(de_total), padj=de_total$padj)
+if ( length(rownames(d)) < topN ) topN = length(rownames(d))
 d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
 d_topx_padj
-plotdata = assay(rld)[d_topx_padj$id,]
+plotdata = assay(rld)[as.character(d_topx_padj$id),]  # <- error
+plotdata
 
 # rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 # colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
