@@ -177,12 +177,12 @@ length(de_total[,1])
 write.table(de_total[order(de_total$padj, decreasing=F),],"DESeq2.all.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_up = de_total[which(de_total$log2FoldChange>0),]
-de_up = de_up[order(de_up$padj, decreasing=T),]   # order by log2FoldChange
+de_up = de_up[order(de_up$padj, decreasing=F),]   # order by log2FoldChange
 length(de_up[,1])
 write.table(de_up,"DESeq2.up.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_down = de_total[which(de_total$log2FoldChange<0),]
-de_down = de_down[order(de_down$padj),]           # order by log2FoldChange
+de_down = de_down[order(de_down$padj, decreasing=F),]           # order by log2FoldChange
 length(de_down[,1])
 write.table(de_down,"DESeq2.down.tsv", sep="\t", quote=FALSE, col.names=NA)
 
