@@ -13,22 +13,6 @@ sessionInfo()
 
 args = commandArgs(TRUE)
 
-# ## Debug only! ################################################################
-# ## Ausma
-# setwd("/data/manke/kilpert/datasets/Ausma/subset/")
-# args = c('/data/manke/kilpert/datasets/Ausma/subset/subset/sampleInfo.tsv',
-#             '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset/htseq-count/counts.txt',
-#             '0.05',
-#             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names")
-# ## Debug only! ################################################################
-# ## Liu_GSE51403
-# setwd("/data/manke/kilpert/datasets/Liu_GSE51403/subset/")
-# args = c('/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
-#             '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/htseq-count/counts.txt',
-#             '0.05',
-#             "/home/kilpert/git/rna-seq-qc/rna-seq-qc/hg38.gene_names")
-###############################################################################
-
 
 print("Running DESeq2 from rna-seq-qc...")
 
@@ -82,7 +66,6 @@ if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
   quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
 }
 
-
 dds = DESeqDataSetFromMatrix(
   countData = countdata,
   colData = sampleInfo,
@@ -90,7 +73,6 @@ dds = DESeqDataSetFromMatrix(
 dds
 colnames(dds) = sampleInfo$name
 head(assay(dds))
-
 
 ################################################################################
 ## Extra data collecting some measures for every sample (e.g. total
@@ -104,7 +86,7 @@ info
 
 ## count table
 head(assay(dds))
-write.table(assay(dds),"DESeq2.counts.tsv", sep="\t", quote=FALSE, col.names=NA) # save to file
+write.table(assay(dds),"DESeq2.counts_raw.tsv", sep="\t", quote=FALSE, col.names=NA) # save to file
 
 ## DE analysis
 assign("last.warning", NULL, envir = baseenv())
@@ -117,6 +99,21 @@ sizeFactors(dds)
 info$size_factors = sizeFactors(dds) 
 info
 
+# save normalized counts to file
+write.table(counts(dds, normalized=T),"DESeq2.counts_normalized.tsv", sep="\t", quote=FALSE, col.names=NA)
+
+# ## size factors plot
+# plotdata = data.frame(name=colnames(dds), size_factor=sizeFactors(dds))
+# plotdata
+# ggplot(plotdata, aes(x=name)) +
+#   geom_bar(aes(weight=size_factor), fill="darkseagreen", width=.7) +
+#   theme_bw(base_size=14) +
+#   geom_text(aes(y=size_factor, label=sprintf("%.3f",size_factor)), size = 4, hjust = 0.5, vjust = -1) +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   xlab("") +
+#   ylab("Size factor")
+# ggsave(file=sprintf("Fig7.Size_factors.pdf"))
+
 ## dispersion plot
 pdf("Fig1.dispersion_plot.pdf")
 plotDispEsts(dds, main="Dispersion plot")
@@ -126,6 +123,7 @@ dev.off()
 res = results(dds)
 head(res)
 summary(res)
+dim(res)
 
 ################################################################################
 ## gene names dict if available
@@ -174,24 +172,20 @@ if ( exists("gene_names_dic") ) {
 ## DE ##########################################################################
 de_total = res[which(res$padj < fdr),]
 length(de_total[,1])
-write.table(de_total[order(de_total$padj, decreasing=F),],"DESeq2.all.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(de_total[order(de_total$padj, decreasing=F),],"DESeq2.de_all.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_up = de_total[which(de_total$log2FoldChange>0),]
-de_up = de_up[order(de_up$padj, decreasing=F),]   # order by log2FoldChange
+de_up = de_up[order(de_up$padj, decreasing=F),]   # order by adjusted p-value
 length(de_up[,1])
-write.table(de_up,"DESeq2.up.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(de_up,"DESeq2.de_up.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_down = de_total[which(de_total$log2FoldChange<0),]
-de_down = de_down[order(de_down$padj, decreasing=F),]           # order by log2FoldChange
+de_down = de_down[order(de_down$padj, decreasing=F),]           # order by adjusted p-value
 length(de_down[,1])
-write.table(de_down,"DESeq2.down.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(de_down,"DESeq2.de_down.tsv", sep="\t", quote=FALSE, col.names=NA)
 
-# save info to metrics file
-write.table(info,"DESeq2.metrics.tsv", sep="\t", quote=FALSE, col.names=NA)
-
-dim(res)
-head(res)
-tail(res)
+# save info to stats file
+write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 # MA plot
 pdf("Fig2.MA-plot.pdf")
@@ -200,13 +194,13 @@ plotMA(res, alpha=fdr, ylim=c(-2,2),
        ylab="log2 fold change")
 dev.off()
 
-## Histogram of p-values
-pdf("Fig3.p-values_histogram.pdf")
-hist(res$pvalue, breaks=20, col="grey", main="Histogram of p-values", xlab="p-value")
-dev.off()
+# ## Histogram of p-values
+# pdf("FigX.p-values_histogram.pdf")
+# hist(res$pvalue, breaks=20, col="grey", main="Histogram of p-values", xlab="p-value")
+# dev.off()
 
 ## Histogram of adjusted p-values
-pdf("Fig4.padj_histogram.pdf")
+pdf("Fig3.padj_histogram.pdf")
 hist(res$padj, breaks=20, col="grey", main="Histogram of adjusted p-values", xlab="padj")
 abline(v=fdr, col="red", lwd=1)
 dev.off()
@@ -220,6 +214,7 @@ plot(attr(res,"filterNumRej"), type="b",
 plot(res$baseMean+1, -log10(res$padj),
      log="x", 
      xlab="mean of normalized counts",
+     ylab="-log10 padj",
      cex=.4, col=rgb(0,0,0,.3))
 abline(h=-log10(fdr), col="red", lwd=1)
 
@@ -227,6 +222,10 @@ abline(h=-log10(fdr), col="red", lwd=1)
 ## rlog transform; for clustering and ordination (e.g PCA)
 rld = rlog(dds)
 head(assay(rld))
+
+# save rlog tranformed counts to file
+write.table(assay(rld),"DESeq2.counts_rlog.tsv", sep="\t", quote=FALSE, col.names=NA)
+
 # show that DEseq's rlog works; not really needed for data analysis
 ##par(mfrow=c(1,2))
 ##plot(log2(1+counts(dds, normalized=T)[,1:2]), col="#00000020", pch=20, cex=0.3)     #log2
@@ -244,7 +243,7 @@ colnames(sampleDistMatrix) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #
 sampleDistMatrix
 
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
-pdf("Fig5.Heatmap.pdf")
+pdf("Fig4.Heatmap.pdf")
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap (Euclidean distances)",
           keysize=1.2,
@@ -265,7 +264,7 @@ ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   theme_bw(base_size = 14) +
   ggtitle("PCA\n")
-ggsave(file=sprintf("PCA.pdf"))
+ggsave(file=sprintf("Fig5.PCA.pdf"), width=10, height=8)
 
 ##pdf("PCA.pdf")
 ##plotPCA(rld, intgroup=c("name", "condition"))
@@ -274,15 +273,21 @@ ggsave(file=sprintf("PCA.pdf"))
 # topN genes by pvalue
 d = data.frame(id=rownames(de_total), padj=de_total$padj)
 if ( length(rownames(d)) < topN ) topN = length(rownames(d))
+
 d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
 d_topx_padj
 plotdata = assay(rld)[as.character(d_topx_padj$id),]  # <- error
 plotdata
 
+## test
+setdiff( as.character(d_topx_padj$id), rownames(plotdata))
+
+
 # rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 # colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
 
 if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
+plotdata
 
 pdf(sprintf("Fig6.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
 heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
