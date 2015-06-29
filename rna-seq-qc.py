@@ -65,22 +65,22 @@ import time
 if socket.gethostname() == "pc305":
     # pass
 
-    ##Test data: MiSeq_Ausma, PE, mm10
-    sys.argv = [sys.argv[0],
-                '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
-                # '--fastq-downsample', '1100000',
-                '-g', 'mm10',
-                '-v',
-                #'--trim',
-                #'--tophat_opts', '"--no-discordant --no-mixed"',
-                '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-                #'--insert-metrics', 'RSeQC',
-                '--mapping-prg', 'HISAT',
-                # '--count-prg', 'htseq-count',
-                #'--seed', '12345',
-                #'--library-type', 'fr-firststrand',
-                ]
+    # ##Test data: MiSeq_Ausma, PE, mm10
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
+    #             # '--fastq-downsample', '1100000',
+    #             '-g', 'mm10',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+    #             #'--insert-metrics', 'RSeQC',
+    #             '--mapping-prg', 'HISAT',
+    #             # '--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
 
     # # Test data: Liu_GSE51403, SE, hg38
     # sys.argv = [sys.argv[0],
