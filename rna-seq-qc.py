@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 __version__ = "rna-seq-qc v0.6.1"
 
@@ -125,6 +125,7 @@ if socket.gethostname() == "pc305":
 #### PATHS ####################################################################
 temp_dir = tempfile.gettempdir()
 script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+python_path=sys.executable
 
 ## Path defaults to all needed scripts and programs
 fastqc_path = "/package/FastQC-0.11.3/"
@@ -639,7 +640,7 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
 
         for infile in infiles:
             if not args.seed:
-                ##jobs = ["python {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+                ##jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(python_path, script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
 
                 ## or:
 
@@ -648,7 +649,7 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
                 ## Note that there is a not misleading "gzip: stdout: Broken pipe" message. The output is fine though!!!
             else:
                 ## print "Using seed:", args.seed
-                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(python_path, script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True) )
             time.sleep(0.1)
@@ -835,7 +836,7 @@ def run_library_type(args, q, indir):
                 print infiles
 
                 for infile in infiles:
-                    jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
+                    jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(python_path, script_path, args.seed, infile, os.path.basename(infile) ),]
 
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
                     time.sleep(0.1)
@@ -1005,7 +1006,7 @@ def run_distance_metrics(args, q, indir):
             print infiles
 
             for infile in infiles:
-                jobs = ["python {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(script_path, args.seed, infile, os.path.basename(infile) ),]
+                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(python_path, script_path, args.seed, infile, os.path.basename(infile) ),]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
