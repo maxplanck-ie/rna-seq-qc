@@ -63,7 +63,7 @@ import time
 #### Development settins ######################################################
 
 if socket.gethostname() == "pc305":
-    pass
+    # pass
 
     # ##Test data: MiSeq_Ausma, PE, mm10
     # sys.argv = [sys.argv[0],
@@ -83,22 +83,32 @@ if socket.gethostname() == "pc305":
     #             #'--library-type', 'fr-firststrand',
     #             ]
 
-    # Test data: Liu_GSE51403, SE, hg38
-    sys.argv = [sys.argv[0],
-                '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
-                '--fastq-downsample', '1100000',
-                '-g', 'hg38',
-                '-v',
-                #'--trim',
-                #'--tophat_opts', '"--no-discordant --no-mixed"',
-                '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
-                # '--insert-metrics', 'Picard',
-                '--mapping-prg', 'HISAT',
-                #'--count-prg', 'htseq-count',
-                #'--seed', '12345',
-                #'--library-type', 'fr-firststrand',
-                ]
+    # # Test data: Liu_GSE51403, SE, hg38
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
+    #             '--fastq-downsample', '1100000',
+    #             '-g', 'hg38',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
+    #             # '--insert-metrics', 'Picard',
+    #             '--mapping-prg', 'HISAT',
+    #             #'--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
+
+    # # Test data: Megumi/Zoe
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/processing/kilpert/test/rna-seq-qc/Megumi/data',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Megumi/Zoe_pc305_trim',
+    #             '-g', 'hg19',
+    #             '--trim',
+    #             #'--fastq-downsample', '500000',
+    #             ]
+
 
     if "--trim_galore" in sys.argv:
         sys.argv2 = sys.argv
@@ -355,14 +365,6 @@ def check_for_paired_infiles(args, indir, ext, verbose=False):
     return infiles
 
 
-# def add_leading_zeros(num, length=2):
-#     """
-#     Add leading zeros to number.
-#     """
-#     padding = length - len("{}".format(num))
-#     return "{}{}".format(padding*"0", num)
-
-
 def run_subprocess(cmd, cwd, td, shell=False, logfile=None, backcopy=True, verbose=False, keep_temp=False):
     """
     Run the subprocess.
@@ -446,118 +448,6 @@ def queue_worker(q, verbose=False):
                 if not job.keep_temp:
                     shutil.rmtree(td)
         q.task_done()
-
-
-# def get_strand_from_rseqc(infile, prog):
-#     """
-#     Infer strand-specificity.
-#     """
-#     specificity_list = []
-#     is_first_file = True
-#
-#     with open(infile, "r") as f:
-#         strands = OrderedDict()
-#         for line in f.readlines():
-#             line = line.strip()
-#             if line.startswith('Fraction of reads explained by "'):
-#                 values = line.replace('Fraction of reads explained by "','').split('": ')
-#                 strands[values[0]] = float(values[1])
-#             if line.startswith('Fraction of reads explained by other combinations: '):
-#                 value = float(line.replace('Fraction of reads explained by other combinations: ',''))
-#                 if value >= 0.2:
-#                     print "Error! A larger fraction ({}) of reads is explained by uncommon strand combinations!".format(value)
-#                     print infile
-#                     exit(1)
-#
-#         if len(strands.keys()) != 2:
-#             print "Error! Unclear strand-specificity in:"
-#             print infile
-#             exit(1)
-#
-#         threshold = 0.6      #min quotient threshold
-#
-#         k = strands.keys()
-#         v = strands.values()
-#
-#         if prog == "rseqc":
-#             specificity = None
-#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-#                     specificity = '++,--'
-#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-#                     specificity = '+-,-+'
-#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-#                     specificity = '1++,1--,2+-,2-+'
-#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-#                     specificity = '1+-,1-+,2++,2--'
-#
-#         elif prog == "tophat":
-#             specificity = "fr-unstranded"
-#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-#                     specificity = "fr-secondstrand"
-#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-#                     specificity = "fr-firststrand"
-#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-#                     specificity = "fr-secondstrand"
-#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-#                     specificity = "fr-firststrand"
-#
-#         elif prog == "hisat":
-#             # for XS attribute tag
-#             specificity = "unstranded"
-#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-#                     specificity = "F"
-#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-#                     specificity = "R"
-#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-#                     specificity = "FR"
-#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-#                     specificity = "RF"
-#
-#         elif prog == "htseq-count":
-#             specificity = "no"
-#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-#                     specificity = "yes"
-#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-#                     specificity = "reverse"
-#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-#                     specificity = "yes"
-#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-#                     specificity = "reverse"
-#
-#         elif prog == "featureCounts":
-#             specificity = "0"
-#             if '++,--' in strands.keys() and '+-,-+' in strands.keys():
-#                 if strands['++,--'] >= threshold and strands['+-,-+'] <= threshold:
-#                     specificity = "1"
-#                 elif strands['++,--'] <= threshold and strands['+-,-+'] >= threshold:
-#                     specificity = "2"
-#             if '1++,1--,2+-,2-+' in strands.keys() and '1+-,1-+,2++,2--' in strands.keys():
-#                 if strands['1++,1--,2+-,2-+'] >= threshold and strands['1+-,1-+,2++,2--'] <= threshold:
-#                     specificity = "1"
-#                 elif strands['1++,1--,2+-,2-+'] <= threshold and strands['1+-,1-+,2++,2--'] >= threshold:
-#                     specificity = "2"
-#
-#     if is_first_file:
-#         specificity_list.append(specificity)
-#     else:
-#         is_first_file = False
-#         if specificity not in specificity_list:
-#             print "Error! Multiple strand specificities detected within different samples."
-#             print " ".join(specificity_list)
-#             exit(1)
-#         else:
-#             specificity_list.append(specificity)
-#
-#     return specificity_list[0]
-
 
 
 def convert_library_type(library_type, prog, paired):
