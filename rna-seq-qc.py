@@ -65,23 +65,22 @@ import time
 if socket.gethostname() == "pc305":
     # pass
 
-    # ##Test data: MiSeq_Ausma, PE, mm10
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Ausma/subset/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset/',
-    #             '--fastq-downsample', '1100000',
-    #             '-g', 'mm10',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-    #             #'--insert-metrics', 'RSeQC',
-    #             '--mapping-prg', 'HISAT',
-    #
-    #             '--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
+    ##Test data: MiSeq_Ausma, PE, mm10
+    sys.argv = [sys.argv[0],
+                '-i', '/data/manke/kilpert/datasets/Ausma/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
+                # '--fastq-downsample', '1100000',
+                '-g', 'mm10',
+                '-v',
+                #'--trim',
+                #'--tophat_opts', '"--no-discordant --no-mixed"',
+                '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+                #'--insert-metrics', 'RSeQC',
+                '--mapping-prg', 'HISAT',
+                # '--count-prg', 'htseq-count',
+                #'--seed', '12345',
+                #'--library-type', 'fr-firststrand',
+                ]
 
     # # Test data: Liu_GSE51403, SE, hg38
     # sys.argv = [sys.argv[0],
@@ -145,7 +144,7 @@ samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
 hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
-R_libraries_export = "export R_LIBS_USER='/data/manke/repository/scripts/rna-seq-qc/rna-seq-qc/R/x86_64-unknown-linux-gnu-library/3.2' &&"
+R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-unknown-linux-gnu-library/3.2 &&"
 
 
 ## Different configurations for other physical machines
@@ -166,7 +165,7 @@ if socket.gethostname() == "pc305":
     samtools_export = ""
     ucsctools_dir_path = ""
     hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/hisat"
-    R_libraries_export = "export R_LIBS_USER='/data/manke/repository/scripts/rna-seq-qc/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2' &&"
+    R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2 &&"
 
 
 
