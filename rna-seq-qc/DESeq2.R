@@ -13,6 +13,14 @@ sessionInfo()
 
 args = commandArgs(TRUE)
 
+# ## For debugging only!!! #######################################################
+# setwd("/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset_hisat/DESeq2/")
+# args = c('/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+#          '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset_hisat/featureCounts/counts.txt',
+#          '0.05',
+#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names')
+# ################################################################################
+
 
 print("Running DESeq2 from rna-seq-qc...")
 
@@ -205,18 +213,18 @@ hist(res$padj, breaks=20, col="grey", main="Histogram of adjusted p-values", xla
 abline(v=fdr, col="red", lwd=1)
 dev.off()
 
-# ## Independent filtering
-attr(res,"filterThreshold")
-plot(attr(res,"filterNumRej"), type="b",
-     ylab="number of rejections",
-     xlab="quantiles of mean of normalized counts")
- 
-plot(res$baseMean+1, -log10(res$padj),
-     log="x", 
-     xlab="mean of normalized counts",
-     ylab="-log10 padj",
-     cex=.4, col=rgb(0,0,0,.3))
-abline(h=-log10(fdr), col="red", lwd=1)
+# # ## Independent filtering
+# attr(res,"filterThreshold")
+# plot(attr(res,"filterNumRej"), type="b",
+#      ylab="number of rejections",
+#      xlab="quantiles of mean of normalized counts")
+#  
+# plot(res$baseMean+1, -log10(res$padj),
+#      log="x", 
+#      xlab="mean of normalized counts",
+#      ylab="-log10 padj",
+#      cex=.4, col=rgb(0,0,0,.3))
+# abline(h=-log10(fdr), col="red", lwd=1)
 
 ################################################################################
 ## rlog transform; for clustering and ordination (e.g PCA)
