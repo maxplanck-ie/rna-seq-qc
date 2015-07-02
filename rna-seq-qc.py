@@ -65,22 +65,22 @@ import time
 if socket.gethostname() == "pc305":
     # pass
 
-    # ##Test data: MiSeq_Ausma, PE, mm10
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
-    #             # '--fastq-downsample', '1100000',
-    #             '-g', 'mm10',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-    #             #'--insert-metrics', 'RSeQC',
-    #             '--mapping-prg', 'HISAT',
-    #             # '--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
+    ##Test data: MiSeq_Ausma, PE, mm10
+    sys.argv = [sys.argv[0],
+                '-i', '/data/manke/kilpert/datasets/Ausma/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
+                # '--fastq-downsample', '1100000',
+                '-g', 'mm10',
+                '-v',
+                #'--trim',
+                #'--tophat_opts', '"--no-discordant --no-mixed"',
+                '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+                #'--insert-metrics', 'RSeQC',
+                '--mapping-prg', 'HISAT',
+                # '--count-prg', 'htseq-count',
+                #'--seed', '12345',
+                #'--library-type', 'fr-firststrand',
+                ]
 
     # # Test data: Liu_GSE51403, SE, hg38
     # sys.argv = [sys.argv[0],
@@ -126,47 +126,48 @@ temp_dir = tempfile.gettempdir()
 script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
 python_path=sys.executable
 
-## Path defaults to all needed scripts and programs
-fastqc_path = "/package/FastQC-0.11.3/"
-trim_galore_path = "/package/trim_galore_v0.4.0/"
-cutadapt_activate = "source /package/cutadapt-1.8.1/bin/activate &&"
-rseqc_path = "/package/RSeQC-2.6.1/bin/"
+## Path defaults to all needed scripts and programs + versions
+fastqc_path = "/package/FastQC-0.11.3/"; fastqc_ver = "FastQC-0.11.3"
+trim_galore_path = "/package/trim_galore_v0.4.0/"; trim_galore_ver = "TrimGalore-v0.4.0"
+cutadapt_activate = "source /package/cutadapt-1.8.1/bin/activate &&"; cutadapt_ver = "Cutadapt-1.8.1"
+rseqc_path = "/package/RSeQC-2.6.1/bin/"; rseqc_ver = "RSeQC-2.6.1"
 rseqc_activate = "source /package/RSeQC-2.6.1/bin/activate &&"
-bowtie2_path = "/package/bowtie2-2.2.3/"
+bowtie2_path = "/package/bowtie2-2.2.3/"; bowtie2_ver = "Bowtie2-2.2.3"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
-picardtools_path = "/package/picard-tools-1.121/"
-tophat2_path = "/package/tophat-2.0.13.Linux_x86_64/"
-feature_counts_path = "/package/subread-1.4.6-p2/bin/"
-htseq_count_path = "/package/HTSeq-0.6.1/bin/"
-R_path = "/package/R-3.2.0/bin/"
-samtools_path = "/package/samtools-1.2/"
+picardtools_path = "/package/picard-tools-1.121/"; picardtools_ver = "Picard-tools-1.1.21"
+tophat2_path = "/package/tophat-2.0.13.Linux_x86_64/"; tophat2_ver = "TopHat-2.0.13"
+feature_counts_path = "/package/subread-1.4.6-p2/bin/"; feature_counts_ver = "featureCounts (subread-1.4.6-p2)"
+htseq_count_path = "/package/HTSeq-0.6.1/bin/"; htseq_count_ver = "HTSeq-0.6.1"
+R_path = "/package/R-3.2.0/bin/"; R_ver = "R-3.2.0"
+samtools_path = "/package/samtools-1.2/"; samtools_ver = "Samtools-1.2"
 samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
-hisat_path = "/package/hisat-0.1.6-beta/bin/hisat"
+hisat_path = "/package/hisat-0.1.6-beta/bin/"; hisat_ver = "HISAT-0.1.6-beta"
 R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-unknown-linux-gnu-library/3.2 &&"
+deseq2_ver = "DESeq2-1.8.1"
 
 
 ## Different configurations for other physical machines
 if socket.gethostname() == "pc305":
-    fastqc_path = "/home/kilpert/Software/bin/"
-    trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"
-    cutadapt_activate = ""
-    rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"
+    fastqc_path = "/home/kilpert/Software/bin/"; fastqc_ver = "FastQC"
+    trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"; trim_galore_ver = "TrimGalore-v0.4.0"
+    cutadapt_activate = ""; cutadapt_ver = "Cutadapt"
+    rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"; rseqc_ver = "RSeQC-2.6.1"
     rseqc_activate = "source activate pc305_RSeQC_2.6.1 &&"
-    bowtie2_path = ""
+    bowtie2_path = ""; bowtie2_ver = "Bowtie2"
     bowtie2_export = ""
-    picardtools_path = "/home/kilpert/Software/picard-tools/picard-tools-1.115/"
-    tophat2_path = ""
-    feature_counts_path = ""
-    htseq_count_path = ""
-    R_path = "/usr/bin/"
-    samtools_path = ""
+    picardtools_path = "/home/kilpert/Software/picard-tools/picard-tools-1.115/"; picardtools_ver = "Picard-tools-1.115"
+    tophat2_path = ""; tophat2_ver = "TopHat-2"
+    feature_counts_path = ""; feature_counts_ver = "featureCounts"
+    htseq_count_path = ""; htseq_count_ver = "HTSeq"
+    R_path = "/usr/bin/"; R_ver = "R-3.2.0"
+    samtools_path = ""; samtools_ver = "Samtools"
     samtools_export = ""
     ucsctools_dir_path = ""
-    hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/hisat"
+    hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/"; hisat_ver = "HISAT"
     R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2 &&"
-
+    deseq2_ver = "DESeq2-1.8.1"
 
 
 #### DEFAULT VARIABLES #################################################################################################
@@ -196,8 +197,8 @@ def parse_args():
 
     ### Optional arguments
     parser.add_argument('--version', action='version', version=__version__)
-    parser.add_argument("-i", "--input-dir", dest="indir", required=True, help="Input dir containing (FASTQ)")
-    parser.add_argument("-o", "--output-dir", dest="outdir", required=True, help="Output directory")
+    parser.add_argument("-i", "--input-dir", dest="main_indir", required=True, help="Input dir containing (FASTQ)")
+    parser.add_argument("-o", "--output-dir", dest="main_outdir", required=True, help="Output directory")
     parser.add_argument("--overwrite", dest="overwrite", action = "store_true", default=False, help="Overwrite results in existing folders!")
     parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: {})".format(default_parallel), type=int, default=default_parallel)
     parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: {})".format(default_threads), type=int, default=default_threads)
@@ -224,9 +225,15 @@ def parse_args():
     ### Positional arguments (required!)
     args = parser.parse_args()
 
+    ## Tools path for report
+    args.script_path = script_path
+
     ### Add useful paths
     args.cwd = os.getcwd()
     args.now = datetime.datetime.now()
+
+    args.indir = args.main_indir
+    args.outdir = args.main_outdir
 
     ### Sanity checking
     ## Input dir
@@ -1257,7 +1264,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1289,7 +1296,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{} {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
@@ -1779,6 +1786,85 @@ def run_rseqc(args, q, indir):
     return os.path.join(args.outdir, outdir)
 
 
+
+def run_project_report(args, q):
+    """
+    Compile a report on the Project.
+    """
+    analysis_name = "project_report"
+    args.analysis_counter += 1
+    outdir = "{}".format(analysis_name)
+    print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
+
+    if args.overwrite and os.path.isdir(outdir):
+        shutil.rmtree(outdir)
+
+    if not os.path.isdir(outdir):
+        print "Output folder already present: {}".format(outdir)
+    else:
+        #os.mkdir(outdir)
+        os.chdir(outdir)
+        cwd = os.getcwd()
+        logfile = os.path.join(cwd, "LOG")
+
+        ## generating file with additional input
+        # report_lines = []
+        # report_lines.append( "Input directory:\t" + args.main_indir )
+        # report_lines.append( "Output directory:\t" + args.main_outdir )
+        # report_lines.append( "Mapping index:\t" + args.transcriptome_index )
+        # report_lines.append( "Mapping:\t" + args.mapping_prg )
+        # report_lines.append( "Counting:\t" + args.count_prg )
+        # for line in report_lines:
+        #     print line
+
+        args.version = __version__
+        args.fastqc_ver = fastqc_ver
+        args.trim_galore_ver = trim_galore_ver
+        args.cutadapt_ver = cutadapt_ver
+        args.rseqc_ver = rseqc_ver
+        args.bowtie2_ver = bowtie2_ver
+        args.picardtools_ver = picardtools_ver
+        args.tophat2_ver = tophat2_ver
+        args.feature_counts_ver = feature_counts_ver
+        args.R_ver = R_ver
+        args.samtools_ver = samtools_ver
+        args.hisat_ver = hisat_ver
+        args.deseq2_ver = deseq2_ver
+        if args.paired:
+            args.seq_type = "paired-end"
+        else:
+            args.seq_type = "single-end"
+
+        lines = []
+        for arg in dir(args):
+            if not arg.startswith("_"):
+                if getattr(args, arg):
+                    lines.append( arg + "\t" + str(getattr(args, arg)).strip() )
+                else:
+                    lines.append( arg + "\t" + "NA" )
+        with open(os.path.join(cwd,"report.data"), "w") as f:
+            for line in lines:
+                line = line.strip()
+                if line:
+                    f.write(line+"\n")
+
+        jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
+                """{} {}R --vanilla --quiet -e "rmarkdown::render('{}rna-seq-qc/report.Rmd', output_file='{}')" --args {}""".format( R_libraries_export , R_path, script_path, os.path.join(cwd,"report.pdf"), os.path.join(cwd,"/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/")),
+                #"rm {}".format(os.path.join(cwd,"report_data.txt")),
+                ]
+
+        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        q.join()
+        if is_error:
+            exit(is_error)
+
+        print "Out:", os.path.join(args.outdir, outdir)
+    os.chdir(args.outdir)
+    return os.path.join(args.outdir, outdir)
+
+
+
+
 #### MAIN PROGRAM ######################################################################################################
 
 def main():
@@ -1866,6 +1952,10 @@ def main():
     run_library_type(args, q, indir)
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
+    try:
+        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True)
+    except:
+        pass
 
     if args.paired and args.mapping_prg == 'TopHat2':
         ## Run strand_specificity
@@ -1916,6 +2006,13 @@ def main():
     run_rseqc(args, q, bam_dir)
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
+
+    ## Run project_summary
+    t1 = datetime.datetime.now()
+    run_project_report(args, q)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
 
     return args.outdir
 
