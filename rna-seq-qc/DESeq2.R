@@ -55,8 +55,8 @@ plotVolcano <- function(res_obj, data=plot) {
        ylim=ylim,
        cex=plotdata$cex, pch=plotdata$pch,
        col=plotdata$col)
-  abline(h=-log10(fdr), col=alpha(4,0.5), lwd=4)
-  abline(v=0, col=alpha(2,0.5), lwd=4)
+  abline(h=-log10(fdr), col=rgb(0,0,1,0.5), lwd=4)
+  abline(v=0, col=rgb(1,0,0,0.5), lwd=4)
 }
 
 ################################################################################
@@ -236,13 +236,17 @@ write.table(de_down,"DESeq2.de_down.tsv", sep="\t", quote=FALSE, col.names=NA)
 write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 # MA and volcano plot
-pdf("Fig2.MA_and_Volcano_plot.pdf", width=12, height=6)
-par(mfrow=c(1,2))
+pdf("Fig2.MA_plot.pdf", width=6, height=6)
+par(mfrow=c(1,1))
 plotMA(res, alpha=0.1, ylim=c(-2,2), 
        main=sprintf("MA-plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
        ylab="log2 fold change")
+dev.off()
+
+pdf("Fig3.Vulcano_plot.pdf", width=6, height=6)
 plotVolcano(res)
 dev.off()
+
 
 # ## Histogram of p-values
 # pdf("FigX.p-values_histogram.pdf")
@@ -250,7 +254,7 @@ dev.off()
 # dev.off()
 
 ## Histogram of adjusted p-values
-pdf("Fig3.padj_histogram.pdf")
+pdf("Fig4.padj_histogram.pdf")
 hist(res$padj, breaks=20, col="grey", main="Histogram of adjusted p-values", xlab="padj")
 abline(v=fdr, col="red", lwd=1)
 dev.off()
@@ -293,7 +297,7 @@ colnames(sampleDistMatrix) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #
 sampleDistMatrix
 
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
-pdf("Fig4.Heatmap.pdf", width=6, height=6)
+pdf("Fig5.Heatmap.pdf", width=6, height=6)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
@@ -314,7 +318,7 @@ ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   theme_bw(base_size = 14) +
   ggtitle("PCA\n")
-ggsave(file=sprintf("Fig5.PCA.pdf"), width=7, height=6)
+ggsave(file=sprintf("Fig6.PCA.pdf"), width=7, height=6)
 
 ##pdf("PCA.pdf")
 ##plotPCA(rld, intgroup=c("name", "condition"))
@@ -339,7 +343,7 @@ setdiff( as.character(d_topx_padj$id), rownames(plotdata))
 if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
 plotdata
 
-pdf(sprintf("Fig6.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
+pdf(sprintf("Fig7.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
 heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
           col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),
           main=sprintf("Top %d DE genes (by p-value)", topN), keysize=1,
