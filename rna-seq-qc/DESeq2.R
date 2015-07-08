@@ -21,6 +21,46 @@ args = commandArgs(TRUE)
 #          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names')
 # ################################################################################
 
+plotVolcano <- function(res_obj, data=plot) {
+  # Volcano plot
+  xlim = c(-2.5,2.5)
+  ylim = c(0,20)
+  cex=c(0.3,0.5)
+  plotdata = data.frame(log2FoldChange=res_obj$log2FoldChange, padj=res_obj$padj )
+  plotdata = plotdata[!is.na(plotdata),]
+  plotdata$cex = cex[[1]]
+  plotdata$pch = 19
+  plotdata$col = "#525252"
+  plotdata$col[plotdata$padj<=fdr] = "#cd0000"
+  
+  plotdata$pch[plotdata$log2FoldChange<xlim[[1]]] = 5
+  plotdata$cex[plotdata$log2FoldChange<xlim[[1]]] = cex[[2]]
+  plotdata$log2FoldChange[plotdata$log2FoldChange<xlim[[1]]] = xlim[[1]]
+
+  plotdata$pch[plotdata$log2FoldChange>xlim[[2]]] = 5
+  plotdata$cex[plotdata$log2FoldChange>xlim[[2]]] = cex[[2]]
+  plotdata$log2FoldChange[plotdata$log2FoldChange>xlim[[2]]] = xlim[[2]]
+  
+  plotdata$pch[-log10(plotdata$padj) > ylim[[2]]] = 2
+  plotdata$cex[-log10(plotdata$padj) > ylim[[2]]] = cex[[2]]
+  plotdata$padj[-log10(plotdata$padj) > ylim[[2]]] = 10^-ylim[[2]]
+  
+  #head(plotdata)
+  #dim(plotdata)
+  plot(plotdata$log2FoldChange, -log10(plotdata$padj),
+       main=sprintf("Volcano plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
+       xlab="log2-fold change",
+       ylab="-log10 q-value",
+       xlim=xlim,
+       ylim=ylim,
+       cex=plotdata$cex, pch=plotdata$pch,
+       col=plotdata$col)
+  abline(h=-log10(fdr), col=alpha(4,0.5), lwd=4)
+  abline(v=0, col=alpha(2,0.5), lwd=4)
+}
+
+################################################################################
+
 
 print("Running DESeq2 from rna-seq-qc...")
 
@@ -195,11 +235,13 @@ write.table(de_down,"DESeq2.de_down.tsv", sep="\t", quote=FALSE, col.names=NA)
 # save info to stats file
 write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 
-# MA plot
-pdf("Fig2.MA-plot.pdf")
-plotMA(res, alpha=fdr, ylim=c(-2,2), 
+# MA and volcano plot
+pdf("Fig2.MA_and_Volcano_plot.pdf", width=12, height=6)
+par(mfrow=c(1,2))
+plotMA(res, alpha=0.1, ylim=c(-2,2), 
        main=sprintf("MA-plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
        ylab="log2 fold change")
+plotVolcano(res)
 dev.off()
 
 # ## Histogram of p-values
@@ -251,9 +293,9 @@ colnames(sampleDistMatrix) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #
 sampleDistMatrix
 
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
-pdf("Fig4.Heatmap.pdf")
+pdf("Fig4.Heatmap.pdf", width=6, height=6)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
-          main="Heatmap (Euclidean distances)",
+          main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
           cex.main=3,
           cexRow=0.8, cexCol=0.8, margins=c(8,8),
@@ -272,7 +314,7 @@ ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   theme_bw(base_size = 14) +
   ggtitle("PCA\n")
-ggsave(file=sprintf("Fig5.PCA.pdf"), width=10, height=8)
+ggsave(file=sprintf("Fig5.PCA.pdf"), width=7, height=6)
 
 ##pdf("PCA.pdf")
 ##plotPCA(rld, intgroup=c("name", "condition"))
