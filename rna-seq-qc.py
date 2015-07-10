@@ -1519,13 +1519,12 @@ def run_deseq2(args, q, indir):
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
 
-        #print "In:", os.path.abspath(indir)
-        #infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
         counts_file = os.path.join(indir, "counts.txt")
         print "In:", counts_file
 
         jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names),
-                "[ -f {rplotspath} && rm {rplotspath}".format(rplotspath='os.path.join(cwd,"Rplots.pdf")'),]
+                "[ -f {rplotspath} ] && rm {rplotspath}".format( rplotspath=os.path.join(cwd,"Rplots.pdf") ),
+                ]
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
 
         q.join()
@@ -1841,7 +1840,7 @@ def run_project_report(args, q):
                 if line:
                     f.write(line+"\n")
 
-        jobs = [#"[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
+        jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
                 "convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
                 "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
                 "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
