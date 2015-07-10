@@ -1,4 +1,4 @@
-## Usage: cat DESeq2.R | /package/R-3.2.0/bin/R --vanilla --quiet --args main_indir main_outdir
+library(gdata)
 
 .Library
 .Library.site
