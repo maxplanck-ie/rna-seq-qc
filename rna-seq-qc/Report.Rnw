@@ -26,6 +26,8 @@ d = opts_knit$get("report.dir")
 rd = read.table(file.path(d, "Report.data"), sep="\t")
 rd_dic = rd[[2]]
 names(rd_dic) = rd[[1]]
+plots1 = file.path(d, "plots1.png")
+plots2 = file.path(d, "plots2.png")
 @
 
 
@@ -82,22 +84,22 @@ FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, H
 \newpage
 
 
-\IfFileExists{/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/plots2.png}{
+\IfFileExists{\Sexpr{plots2}}{
 \section{Sample correlations}
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1\textwidth,]{/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/plots2.png}
+\includegraphics[width=1\textwidth,]{\Sexpr{plots2}}
 \caption{Correlation between samples based on normalized and rlog-transformed read counts (DESeq2)}
 \label{fig:figure1}
 \end{figure}
 }
 
 
-\IfFileExists{/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/plots1.png}{
+\IfFileExists{\Sexpr{plots1}}{
 \section{Differential expression}
 \begin{figure}[ht]
 \centering
-\includegraphics[width=1\textwidth,]{/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/plots1.png}
+\includegraphics[width=1\textwidth,]{\Sexpr{plots1}}
 \caption{Differentially expressed genes based on normalized counts (DESeq2)}
 \label{fig:figure2}
 \end{figure}
