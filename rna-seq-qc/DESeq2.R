@@ -23,7 +23,7 @@ args = commandArgs(TRUE)
 
 plotVolcano <- function(res_obj, data=plot) {
   # Volcano plot
-  xlim = c(-2.5,2.5)
+  xlim = c(-3,3)
   ylim = c(0,20)
   cex=c(0.3,0.5)
   plotdata = data.frame(log2FoldChange=res_obj$log2FoldChange, padj=res_obj$padj )
@@ -238,7 +238,7 @@ write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 # MA and volcano plot
 pdf("Fig2.MA_plot.pdf", width=6, height=6)
 par(mfrow=c(1,1))
-plotMA(res, alpha=0.1, ylim=c(-2,2), 
+plotMA(res, alpha=0.1, ylim=c(-3,3), 
        main=sprintf("MA-plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
        ylab="log2 fold change")
 dev.off()
