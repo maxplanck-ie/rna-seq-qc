@@ -298,11 +298,12 @@ sampleDistMatrix
 
 colours = colorRampPalette(rev(brewer.pal(9, "GnBu")))(255)
 pdf("Fig5.Heatmap.pdf", width=6, height=6)
+par(cex.main=1)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
-          cex.main=3,
-          cexRow=0.8, cexCol=0.8, margins=c(8,8),
+          notecex=1.5,
+          cexRow=1, cexCol=1, margins=c(10,10),
           cellnote=round(sampleDistMatrix,1),
           notecol="black")
 dev.off()
