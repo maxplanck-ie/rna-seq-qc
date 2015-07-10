@@ -1524,7 +1524,8 @@ def run_deseq2(args, q, indir):
         counts_file = os.path.join(indir, "counts.txt")
         print "In:", counts_file
 
-        jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names)]
+        jobs = ["{} cat {}rna-seq-qc/DESeq2.R | {}R --vanilla --quiet --args {} {} {} {}".format(R_libraries_export, script_path, R_path, args.sample_info, counts_file, 0.05, args.gene_names),
+                "[ -f {rplotspath} && rm {rplotspath}".format(rplotspath='os.path.join(cwd,"Rplots.pdf")'),]
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
 
         q.join()
@@ -1799,23 +1800,13 @@ def run_project_report(args, q):
     if args.overwrite and os.path.isdir(outdir):
         shutil.rmtree(outdir)
 
-    if not os.path.isdir(outdir):
+    if os.path.isdir(outdir):
         print "Output folder already present: {}".format(outdir)
     else:
-        #os.mkdir(outdir)
+        os.mkdir(outdir)
         os.chdir(outdir)
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
-
-        ## generating file with additional input
-        # report_lines = []
-        # report_lines.append( "Input directory:\t" + args.main_indir )
-        # report_lines.append( "Output directory:\t" + args.main_outdir )
-        # report_lines.append( "Mapping index:\t" + args.transcriptome_index )
-        # report_lines.append( "Mapping:\t" + args.mapping_prg )
-        # report_lines.append( "Counting:\t" + args.count_prg )
-        # for line in report_lines:
-        #     print line
 
         args.version = __version__
         args.fastqc_ver = fastqc_ver
@@ -1830,6 +1821,8 @@ def run_project_report(args, q):
         args.samtools_ver = samtools_ver
         args.hisat_ver = hisat_ver
         args.deseq2_ver = deseq2_ver
+        args.logo = os.path.join(args.script_path, "rna-seq-qc", "logo.png")
+        args.report_dir = cwd
         if args.paired:
             args.seq_type = "paired-end"
         else:
@@ -1842,15 +1835,32 @@ def run_project_report(args, q):
                     lines.append( arg + "\t" + str(getattr(args, arg)).strip() )
                 else:
                     lines.append( arg + "\t" + "NA" )
-        with open(os.path.join(cwd,"report.data"), "w") as f:
+        with open(os.path.join(cwd,"Report.data"), "w") as f:
             for line in lines:
                 line = line.strip()
                 if line:
                     f.write(line+"\n")
 
-        jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
-                """{} {}R --vanilla --quiet -e "rmarkdown::render('{}rna-seq-qc/report.Rmd', output_file='{}')" --args {}""".format( R_libraries_export , R_path, script_path, os.path.join(cwd,"report.pdf"), os.path.join(cwd,"/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/")),
-                #"rm {}".format(os.path.join(cwd,"report_data.txt")),
+        jobs = [#"[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
+                "convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
+                "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
+                "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
+                "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
+                "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
+                "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
+                "{} cat {}rna-seq-qc/Rnw2PDF.R | {}R --vanilla --quiet --args {} {}".format(R_libraries_export, script_path, R_path, cwd, os.path.join(script_path,"rna-seq-qc","Report.Rnw")),
+                "rm {} {} {} {} {} {} {} {} {} {}".format(os.path.join(cwd, "1.png"),
+                               os.path.join(cwd, "2.png"),
+                               os.path.join(cwd, "3.png"),
+                               os.path.join(cwd, "4.png"),
+                               os.path.join(cwd, "plots1.png"),
+                               os.path.join(cwd, "plots2.png"),
+                               os.path.join(cwd, "Report.aux"),
+                               os.path.join(cwd, "Report.tex"),
+                               os.path.join(cwd, "Report.log"),
+                               os.path.join(cwd, "Report.data"),
+                               )
+                #1.png 2.png 3.png plots1.png plots2.png Report.aux Report.tex Report.log Report.data"
                 ]
 
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
@@ -1861,7 +1871,6 @@ def run_project_report(args, q):
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
     return os.path.join(args.outdir, outdir)
-
 
 
 
