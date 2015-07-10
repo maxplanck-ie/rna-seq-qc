@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "rna-seq-qc v0.6.2"
+__version__ = "rna-seq-qc v0.7.0"
 
 
 __description__ = """
@@ -9,7 +9,7 @@ __description__ = """
 
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-    Fabian Kilpert - July 2, 2015
+    Fabian Kilpert - July 10, 2015
     email: kilpert@ie-freiburg.mpg.de
 
     This software is distributed WITHOUT ANY WARRANTY!
