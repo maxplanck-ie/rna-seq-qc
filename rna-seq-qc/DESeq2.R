@@ -302,8 +302,8 @@ par(cex.main=1)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
-          notecex=1.5,
-          cexRow=1, cexCol=1, margins=c(10,10),
+          notecex=1.6,
+          cexRow=1.2, cexCol=1.2, margins=c(10,10),
           cellnote=round(sampleDistMatrix,1),
           notecol="black")
 dev.off()
