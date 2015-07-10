@@ -68,7 +68,7 @@ if socket.gethostname() == "pc305":
     ##Test data: MiSeq_Ausma, PE, mm10
     sys.argv = [sys.argv[0],
                 '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
+                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim_ds/',
                 # '--fastq-downsample', '1100000',
                 '-g', 'mm10',
                 '-v',
@@ -81,6 +81,23 @@ if socket.gethostname() == "pc305":
                 #'--seed', '12345',
                 #'--library-type', 'fr-firststrand',
                 ]
+
+    # ##Test data: MiSeq_Ausma, PE, mm10
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
+    #             # '--fastq-downsample', '1100000',
+    #             '-g', 'mm10',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+    #             #'--insert-metrics', 'RSeQC',
+    #             '--mapping-prg', 'HISAT',
+    #             # '--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
 
     # # Test data: Liu_GSE51403, SE, hg38
     # sys.argv = [sys.argv[0],
@@ -1858,8 +1875,7 @@ def run_project_report(args, q):
                                os.path.join(cwd, "Report.tex"),
                                os.path.join(cwd, "Report.log"),
                                os.path.join(cwd, "Report.data"),
-                               )
-                #1.png 2.png 3.png plots1.png plots2.png Report.aux Report.tex Report.log Report.data"
+                               ),
                 ]
 
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
