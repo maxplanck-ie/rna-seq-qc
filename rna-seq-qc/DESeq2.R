@@ -29,7 +29,7 @@ plotVolcano <- function(res_obj, data=plot) {
   plotdata = data.frame(log2FoldChange=res_obj$log2FoldChange, padj=res_obj$padj )
   plotdata = plotdata[!is.na(plotdata),]
   plotdata$cex = cex[[1]]
-  plotdata$pch = 19
+  plotdata$pch = 16
   plotdata$col = "#525252"
   plotdata$col[plotdata$padj<=fdr] = "#cd0000"
   
