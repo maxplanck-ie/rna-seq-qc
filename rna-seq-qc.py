@@ -74,7 +74,7 @@ if socket.gethostname() == "pc305":
                 '-v',
                 #'--trim',
                 #'--tophat_opts', '"--no-discordant --no-mixed"',
-                '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+                # '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
                 #'--insert-metrics', 'RSeQC',
                 '--mapping-prg', 'HISAT',
                 # '--count-prg', 'htseq-count',
@@ -1857,27 +1857,35 @@ def run_project_report(args, q):
                 if line:
                     f.write(line+"\n")
 
-        jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
-                "convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
-                "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
-                "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
-                "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
-                "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
-                "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
-                "{} cat {}rna-seq-qc/Rnw2PDF.R | {}R --vanilla --quiet --args {} {}".format(R_libraries_export, script_path, R_path, cwd, os.path.join(script_path,"rna-seq-qc","Report.Rnw")),
-                "rm {} {} {} {} {} {} {} {} {} {}".format(os.path.join(cwd, "1.png"),
+        print args.sample_info
+        if args.sample_info:
+            jobs = ["convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
+                    "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
+                    "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
+                    "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
+                    "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
+                    "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
+                    "rm {} {} {} {} {}".format(os.path.join(cwd, "1.png"),
                                os.path.join(cwd, "2.png"),
                                os.path.join(cwd, "3.png"),
                                os.path.join(cwd, "4.png"),
                                os.path.join(cwd, "plots1.png"),
                                os.path.join(cwd, "plots2.png"),
-                               os.path.join(cwd, "Report.aux"),
-                               os.path.join(cwd, "Report.tex"),
-                               os.path.join(cwd, "Report.log"),
-                               os.path.join(cwd, "Report.data"),
                                ),
-                ]
+                    ]
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+            q.join()
+            if is_error:
+                exit(is_error)
 
+        jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
+                "{} cat {}rna-seq-qc/Rnw2PDF.R | {}R --vanilla --quiet --args {} {}".format(R_libraries_export, script_path, R_path, cwd, os.path.join(script_path,"rna-seq-qc","Report.Rnw")),
+                "rm {} {} {} {}".format(os.path.join(cwd, "Report.aux"),
+                                        os.path.join(cwd, "Report.tex"),
+                                        os.path.join(cwd, "Report.log"),
+                                        os.path.join(cwd, "Report.data"),
+                                        ),
+                ]
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         q.join()
         if is_error:
@@ -2025,17 +2033,18 @@ def main():
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
+    ## Run project_summary
+    t1 = datetime.datetime.now()
+    run_project_report(args, q)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
     ## Run RSeQC
     t1 = datetime.datetime.now()
     run_rseqc(args, q, bam_dir)
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    ## Run project_summary
-    t1 = datetime.datetime.now()
-    run_project_report(args, q)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
 
 
     return args.outdir
