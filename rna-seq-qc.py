@@ -65,22 +65,22 @@ import time
 if socket.gethostname() == "pc305":
     # pass
 
-    ##Test data: MiSeq_Ausma, PE, mm10
-    sys.argv = [sys.argv[0],
-                '-i', '/data/manke/kilpert/datasets/Ausma/',
-                '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim_ds/',
-                # '--fastq-downsample', '1100000',
-                '-g', 'mm10',
-                '-v',
-                #'--trim',
-                #'--tophat_opts', '"--no-discordant --no-mixed"',
-                # '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-                #'--insert-metrics', 'RSeQC',
-                '--mapping-prg', 'HISAT',
-                # '--count-prg', 'htseq-count',
-                #'--seed', '12345',
-                #'--library-type', 'fr-firststrand',
-                ]
+    # ##Test data: MiSeq_Ausma, PE, mm10
+    # sys.argv = [sys.argv[0],
+    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
+    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim_ds/',
+    #             # '--fastq-downsample', '1100000',
+    #             '-g', 'mm10',
+    #             '-v',
+    #             #'--trim',
+    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
+    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
+    #             #'--insert-metrics', 'RSeQC',
+    #             '--mapping-prg', 'HISAT',
+    #             # '--count-prg', 'htseq-count',
+    #             #'--seed', '12345',
+    #             #'--library-type', 'fr-firststrand',
+    #             ]
 
     # ##Test data: MiSeq_Ausma, PE, mm10
     # sys.argv = [sys.argv[0],
@@ -1857,7 +1857,6 @@ def run_project_report(args, q):
                 if line:
                     f.write(line+"\n")
 
-        print args.sample_info
         if args.sample_info:
             jobs = ["convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
                     "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
@@ -1865,12 +1864,10 @@ def run_project_report(args, q):
                     "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
                     "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
                     "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
-                    "rm {} {} {} {} {}".format(os.path.join(cwd, "1.png"),
+                    "rm {} {} {} {}".format(os.path.join(cwd, "1.png"),
                                os.path.join(cwd, "2.png"),
                                os.path.join(cwd, "3.png"),
                                os.path.join(cwd, "4.png"),
-                               os.path.join(cwd, "plots1.png"),
-                               os.path.join(cwd, "plots2.png"),
                                ),
                     ]
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
@@ -1890,6 +1887,15 @@ def run_project_report(args, q):
         q.join()
         if is_error:
             exit(is_error)
+
+        # remove files if
+        if args.sample_info:
+            jobs = ["rm {} {}".format( os.path.join(cwd, "plots1.png"), os.path.join(cwd, "plots2.png"), ),
+                    ]
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+            q.join()
+            if is_error:
+                exit(is_error)
 
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
