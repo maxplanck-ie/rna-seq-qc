@@ -60,70 +60,29 @@ from threading import Thread
 import time
 
 
+#### PATHS ####################################################################
+temp_dir = tempfile.gettempdir()
+script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
+python_path=sys.executable
+
+
 #### Development settins ######################################################
 
 if socket.gethostname() == "pc305":
-    # pass
 
-    # ##Test data: MiSeq_Ausma, PE, mm10
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim_ds/',
-    #             # '--fastq-downsample', '1100000',
-    #             '-g', 'mm10',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-    #             #'--insert-metrics', 'RSeQC',
-    #             '--mapping-prg', 'HISAT',
-    #             # '--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
-
-    # ##Test data: MiSeq_Ausma, PE, mm10
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Ausma/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/',
-    #             # '--fastq-downsample', '1100000',
-    #             '-g', 'mm10',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-    #             #'--insert-metrics', 'RSeQC',
-    #             '--mapping-prg', 'HISAT',
-    #             # '--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
-
-    # # Test data: Liu_GSE51403, SE, hg38
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Liu_GSE51403/SE_hg38_subset/',
-    #             '--fastq-downsample', '1100000',
-    #             '-g', 'hg38',
-    #             '-v',
-    #             #'--trim',
-    #             #'--tophat_opts', '"--no-discordant --no-mixed"',
-    #             '--DE', '/data/manke/kilpert/datasets/Liu_GSE51403/subset/setup.tsv',
-    #             # '--insert-metrics', 'Picard',
-    #             '--mapping-prg', 'HISAT',
-    #             #'--count-prg', 'htseq-count',
-    #             #'--seed', '12345',
-    #             #'--library-type', 'fr-firststrand',
-    #             ]
-
-    # # Test data: Megumi/Zoe
-    # sys.argv = [sys.argv[0],
-    #             '-i', '/data/processing/kilpert/test/rna-seq-qc/Megumi/data',
-    #             '-o', '/data/processing/kilpert/test/rna-seq-qc/Megumi/Zoe_pc305_trim',
-    #             '-g', 'hg19',
-    #             '--trim',
-    #             #'--fastq-downsample', '500000',
-    #             ]
+    ## Reading start options (if available)
+    start_options_file = os.path.join(script_path, "rna-seq-qc", "start_options.txt")
+    if os.path.isfile(start_options_file):
+        start_options = []
+        with open(start_options_file, "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if not line.startswith("#"):
+                    if line:
+                        start_options.extend(line.split())
+        if start_options:
+            print "Using start options:", " ".join(start_options)
+            sys.argv = [sys.argv[0]] + start_options
 
 
     if "--trim_galore" in sys.argv:
@@ -138,12 +97,8 @@ if socket.gethostname() == "pc305":
         print " ".join(sys.argv)   # output command line
 
 
-#### PATHS ####################################################################
-temp_dir = tempfile.gettempdir()
-script_path = os.path.dirname(os.path.realpath(__file__)) + "/"
-python_path=sys.executable
 
-## Path defaults to all needed scripts and programs + versions
+## Path defaults to all needed scripts and programs + versions ################
 fastqc_path = "/package/FastQC-0.11.3/"; fastqc_ver = "FastQC-0.11.3"
 trim_galore_path = "/package/trim_galore_v0.4.0/"; trim_galore_ver = "TrimGalore-v0.4.0"
 cutadapt_activate = "source /package/cutadapt-1.8.1/bin/activate &&"; cutadapt_ver = "Cutadapt-1.8.1"
