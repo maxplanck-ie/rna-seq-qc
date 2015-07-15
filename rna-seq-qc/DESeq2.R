@@ -83,8 +83,10 @@ cat(paste("Gene names:", geneNamesFilePath, "\n"))
 cat(paste("Number of top N genes:", topN, "\n"))
 
 ## sampleInfo (setupt of the experiment)
-sampleInfo = read.table(sampleInfoFilePath, header=TRUE)
-sampleInfo = DataFrame(sampleInfo)
+sampleInfo = read.table(sampleInfoFilePath, header=TRUE, stringsAsFactor=F)
+## add X at the beginning of rows beginning with a number (makes it consistent to column names of of the count matrix!)
+sampleInfo[grep("^[0-9]", sampleInfo$name),]$name = paste("X", sampleInfo[grep("^[0-9]", sampleInfo$name),]$name, sep="")
+sampleInfo = DataFrame(as.data.frame(unclass(sampleInfo)))
 sampleInfo = sampleInfo[order(sampleInfo$name, decreasing=F),]  # order by sample name
 sampleInfo
 
