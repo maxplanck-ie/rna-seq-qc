@@ -1918,12 +1918,11 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    # ## Run FastQC
-    # if args.trim:
-    #     t1 = datetime.datetime.now()
-    #     run_fastqc(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
+    ## Run FastQC
+    t1 = datetime.datetime.now()
+    run_fastqc(args, q, indir)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
 
     ## Run Trim Galore!
     if args.trim:
