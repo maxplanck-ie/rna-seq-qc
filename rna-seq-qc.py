@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "rna-seq-qc v0.7.0"
+__version__ = "rna-seq-qc v0.7.1"
 
 
 __description__ = """
