@@ -984,7 +984,7 @@ def run_distance_metrics(args, q, indir):
             print infiles
 
             for infile in infiles:
-                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(python_path, script_path, args.seed, infile, os.path.basename(infile) ),]
+                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
                 time.sleep(0.1)
