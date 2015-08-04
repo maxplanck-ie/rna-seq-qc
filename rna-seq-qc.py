@@ -592,7 +592,7 @@ def get_my_vars(infile, *var_names):
 
 def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
     """
-    Reduce the number of sequences in FASTQ file to n first sequences (using bash shuf).
+    Reduce the number of sequences in FASTQ file to n first sequences
     """
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name.replace(" ", "_"))
@@ -793,7 +793,7 @@ def run_library_type(args, q, indir):
                     for pair in infiles:
                         # print "PE"
                         bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
-                        jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
+                        jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_pe.sh {} {} {} {} {}".format(script_path,
                                     n,
                                     pair[0],
                                     pair[1],
@@ -804,7 +804,7 @@ def run_library_type(args, q, indir):
                     for infile in infiles:
                         # print "SE"
                         bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                        jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_se.sh {} {} {}".format(script_path,
+                        jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_se.sh {} {} {}".format(script_path,
                                     n,
                                     infile,
                                     os.path.join(cwd,bname+".fastq.gz")),]
@@ -814,7 +814,7 @@ def run_library_type(args, q, indir):
                 print infiles
 
                 for infile in infiles:
-                    jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n 200000 -s {} {} {}".format(python_path, script_path, args.seed, infile, os.path.basename(infile) ),]
+                    jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
 
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
                     time.sleep(0.1)
@@ -963,7 +963,7 @@ def run_distance_metrics(args, q, indir):
                 for pair in infiles:
                     # print "PE"
                     bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
-                    jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_pe.sh {} {} {} {} {}".format(script_path,
+                    jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_pe.sh {} {} {} {} {}".format(script_path,
                                 n,
                                 pair[0],
                                 pair[1],
@@ -974,7 +974,7 @@ def run_distance_metrics(args, q, indir):
                 for infile in infiles:
                     # print "SE"
                     bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                    jobs = ["bash {}rna-seq-qc/shuf_downsample_fastq_se.sh {} {} {}".format(script_path,
+                    jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_se.sh {} {} {}".format(script_path,
                                 n,
                                 infile,
                                 os.path.join(cwd,bname+".fastq.gz")),]
