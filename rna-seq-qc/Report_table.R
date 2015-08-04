@@ -9,8 +9,8 @@ sessionInfo()
 args = commandArgs(TRUE)
 
 ## For debugging only!!! #######################################################
-#setwd("/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/")
-#args = c('/data/manke/kilpert/datasets/Ausma/',
+# setwd("/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/project_report/")
+# args = c('/data/manke/kilpert/datasets/Ausma/',
 #         '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_FULL_hisat_trim/')
 ################################################################################
 
