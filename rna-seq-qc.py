@@ -401,7 +401,7 @@ def run_subprocess(cmd, cwd, td, shell=False, logfile=None, backcopy=True, verbo
                 shutil.move(os.path.join(td,f), cwd)
 
 
-def queue_worker(q, verbose=False):
+def queue_worker(q, verbose=False, rest=0.2):
     """
     Worker executing jobs (command lines) sent to the queue.
     """
@@ -427,6 +427,7 @@ def queue_worker(q, verbose=False):
                 if not job.keep_temp:
                     shutil.rmtree(td)
         q.task_done()
+        time.sleep(rest)
 
 
 def convert_library_type(library_type, prog, paired):
@@ -630,7 +631,6 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
                 jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(python_path, script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True) )
-            time.sleep(0.1)
 
         q.join()
         if is_error:
@@ -676,7 +676,6 @@ def run_fastqc(args, q, indir, analysis_name="FastQC"):
         for infile in infiles:
             jobs = ["{}fastqc --extract -o {} {}".format(fastqc_path, cwd, infile)]
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True))
-            time.sleep(0.1)
         q.join()
         if is_error:
             exit(is_error)
@@ -726,7 +725,6 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
                         "mv {}_trimmed.fq.gz {}.fastq.gz".format(os.path.join(cwd,bname), os.path.join(cwd,bname))]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True))
-            time.sleep(0.2)
         q.join()
         if is_error:
             exit(is_error)
@@ -740,12 +738,12 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
 
 def run_library_type(args, q, indir):
     """
-    - Random downsampling to n=100,000 reads
+    - Random downsampling to n=500,000 reads
     - Bowtie2 mapping to genome -> library_type (infer_experiment; RSeQC)
     - Save a file with settings for TopHat2 (*.TopHat.txt): library-type
     """
 
-    n = 100000  # number of downsampling reads
+    n = 500000  # number of downsampling reads
 
     analysis_name = "library_type"
     args.analysis_counter += 1
@@ -817,7 +815,6 @@ def run_library_type(args, q, indir):
                     jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
 
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-                    time.sleep(0.1)
 
             q.join()
             if is_error:
@@ -842,7 +839,6 @@ def run_library_type(args, q, indir):
 
                     #q.put(Qjob(jobs, shell=True, logfile="LOG"))
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
-                    time.sleep(0.1)
             else:
                 for infile in infiles:
                     bname = re.sub(".fastq.gz$","",os.path.basename(infile))
@@ -855,7 +851,6 @@ def run_library_type(args, q, indir):
                             ]
 
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True))
-                    time.sleep(0.1)
             q.join()
             if is_error:
                 exit(is_error)
@@ -880,7 +875,6 @@ def run_library_type(args, q, indir):
                         "rm {}.genome_mapped.bam".format(os.path.join(args.outdir, outdir, bname)),
                         ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
 
             ###################################################################
@@ -987,7 +981,6 @@ def run_distance_metrics(args, q, indir):
                 jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
 
         q.join()
         if is_error:
@@ -1011,7 +1004,6 @@ def run_distance_metrics(args, q, indir):
                     ]
 
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
-            time.sleep(0.1)
         q.join()
         if is_error:
             exit(is_error)
@@ -1040,7 +1032,6 @@ def run_distance_metrics(args, q, indir):
                         ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             if is_error:
                 exit(is_error)
@@ -1060,7 +1051,6 @@ def run_distance_metrics(args, q, indir):
                         ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             if is_error:
                 exit(is_error)
@@ -1100,7 +1090,6 @@ def run_distance_metrics(args, q, indir):
                             ]
                     print jobs
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                    time.sleep(0.1)
                 q.join()
                 if is_error:
                     exit(is_error)
@@ -1165,7 +1154,6 @@ def run_tophat(args, q, indir):
                             #re.sub("_R*[1|2].fastq.gz","",os.path.basename(pair[0])), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
         else:
             for infile in infiles:
                 bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
@@ -1174,7 +1162,6 @@ def run_tophat(args, q, indir):
                             .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
         print
         q.join()
         if is_error:
@@ -1259,7 +1246,6 @@ def run_hisat(args, q, indir):
                         ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
         ## SE
         else:
             for infile in infiles:
@@ -1291,7 +1277,6 @@ def run_hisat(args, q, indir):
                         ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
         print
         q.join()
         if is_error:
@@ -1359,7 +1344,6 @@ def run_htseq_count(args, q, indir):
                               outfile="{}.counts.txt".format(bname)) ]
             #q.put(Qjob(jobs, logfile="LOG", shell=True))
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-            time.sleep(0.1)
         q.join()
         if is_error:
             exit(is_error)
@@ -1439,7 +1423,6 @@ def run_featureCounts(args, q, indir):
 
             #q.put(Qjob(jobs, logfile="LOG", shell=False))
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=False, backcopy=True, keep_temp=False))
-            time.sleep(0.1)
         q.join()
         if is_error:
             exit(is_error)
@@ -1548,7 +1531,6 @@ def run_rseqc(args, q, indir):
                 bname = ".".join(os.path.basename(infile).split(".")[:-1])
                 jobs = ["export PATH={}:$PATH && {} {}infer_experiment.py -i {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname)+".infer_experiment.txt")]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1565,7 +1547,6 @@ def run_rseqc(args, q, indir):
                 else:
                     jobs = ["{} {}bam2wig.py -t 1000000000 --skip-multi-hits -i {} -o {} -s {}".format(rseqc_activate, rseqc_path, infile, os.path.join(cwd, "bam2wig", bname), args.fasta_index) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             ## convert wig to bw
             for file in sorted([ os.path.join("bam2wig", f) for f in os.listdir("bam2wig") if f.endswith(".wig")]):
@@ -1585,7 +1566,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 jobs = ["export PATH={}:$PATH && {} {}bam_stat.py -i {} 2> {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "bam_stat", bname)+".bam_stat.txt")]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1598,7 +1578,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 jobs = ["export PATH={}:$PATH && {} {}geneBody_coverage.py -i {} -o {} -r {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "geneBody_coverage", bname)+".geneBody_coverage", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1611,7 +1590,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 jobs = ["export PATH={}:$PATH && {} {}junction_annotation.py -i {} -o {} -r {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "junction_annotation", bname)+".junction_annotation", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1624,7 +1602,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam$","",os.path.basename(infile))
                 jobs = [ "export PATH={}:$PATH && {} {}junction_saturation.py -i {} -o {} -r {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "junction_saturation", bname)+".junction_saturation", args.bed) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1637,7 +1614,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam","",os.path.basename(infile))
                 jobs = [ "export PATH={}:$PATH && {} {}read_duplication.py -i {} -o {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "read_duplication", bname)+".read_duplication") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1652,7 +1628,6 @@ def run_rseqc(args, q, indir):
                     bname = re.sub(".bam","",os.path.basename(infile))
                     jobs = [ "export PATH={}:$PATH && {} {}read_distribution.py -i {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path, infile, args.bed, os.path.join(cwd, "read_distribution", bname)+".read_distribution.txt") ]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                    time.sleep(0.1)
                 q.join()
                 t2 = datetime.datetime.now()
                 print "Duration:", t2-t1
@@ -1665,7 +1640,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam","",os.path.basename(infile))
                 jobs = [ "export PATH={}:$PATH && {} {}read_GC.py -i {} -o {}".format(R_path, rseqc_activate, rseqc_path, infile, os.path.join(cwd, "read_GC", bname)+".read_GC") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1678,7 +1652,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam","",os.path.basename(infile))
                 jobs = [ "export PATH={}:$PATH && {} {}read_NVC.py -i {} -o {}".format(R_path, rseqc_activate, rseqc_path, infile, re.sub(".bam$", "", os.path.join(cwd, "read_NVC", bname)+".read_NVC")) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1697,7 +1670,6 @@ def run_rseqc(args, q, indir):
                 bname = re.sub(".bam","",os.path.basename(infile))
                 jobs = [ "export PATH={}:$PATH && {} {}split_bam.py -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, infile, args.bed, re.sub(".bam$", "", os.path.join(cwd, "spilt_bam", bname)+".spilt_bam")) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1711,7 +1683,6 @@ def run_rseqc(args, q, indir):
                     bname = re.sub(".bam$","",os.path.basename(infile))
                     jobs = ["export PATH={}:$PATH && {} {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), os.path.join(cwd, "inner_distance", bname), args.bed, os.path.join(cwd, "inner_distance", bname)+".inner_distance.summary.txt") ]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                    time.sleep(0.1)
                 q.join()
                 t2 = datetime.datetime.now()
                 print "Duration:", t2-t1
@@ -1728,7 +1699,6 @@ def run_rseqc(args, q, indir):
                 else:
                     jobs = [ "export PATH={}:$PATH && {} {}RPKM_count.py --skip-multi-hits -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_count", bname)+".RPKM") ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
@@ -1745,7 +1715,6 @@ def run_rseqc(args, q, indir):
                 else:
                     jobs =  [ "export PATH={}:$PATH && {} {}RPKM_saturation.py -i {} -r {} -o {}".format(R_path, rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "RPKM_saturation", bname)) ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                time.sleep(0.1)
             q.join()
             t2 = datetime.datetime.now()
             print "Duration:", t2-t1
