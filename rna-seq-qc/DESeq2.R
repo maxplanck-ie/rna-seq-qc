@@ -14,11 +14,11 @@ sessionInfo()
 args = commandArgs(TRUE)
 
 # ## For debugging only!!! #######################################################
-# setwd("/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset_hisat/DESeq2/")
-# args = c('/data/manke/kilpert/datasets/Ausma/subset/sampleInfo.tsv',
-#          '/data/processing/kilpert/test/rna-seq-qc/Ausma/PE_mm10_subset_hisat/featureCounts/counts.txt',
+# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/DESeq2/")
+# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
+#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
 #          '0.05',
-#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/mm10.gene_names')
+#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
 # ################################################################################
 
 plotVolcano <- function(res_obj, data=plot) {
@@ -85,7 +85,9 @@ cat(paste("Number of top N genes:", topN, "\n"))
 ## sampleInfo (setupt of the experiment)
 sampleInfo = read.table(sampleInfoFilePath, header=TRUE, stringsAsFactor=F)
 ## add X at the beginning of rows beginning with a number (makes it consistent to column names of of the count matrix!)
-sampleInfo[grep("^[0-9]", sampleInfo$name),]$name = paste("X", sampleInfo[grep("^[0-9]", sampleInfo$name),]$name, sep="")
+if ( any(grepl("^[0-9]", sampleInfo$name)) ) {
+  sampleInfo[grepl("^[0-9]", sampleInfo$name),]$name = paste("X", sampleInfo[grepl("^[0-9]", sampleInfo$name),]$name, sep="")  
+}
 sampleInfo = DataFrame(as.data.frame(unclass(sampleInfo)))
 sampleInfo = sampleInfo[order(sampleInfo$name, decreasing=F),]  # order by sample name
 sampleInfo
