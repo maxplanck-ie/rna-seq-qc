@@ -14,9 +14,9 @@ sessionInfo()
 args = commandArgs(TRUE)
 
 # ## For debugging only!!! #######################################################
-# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/DESeq2/")
-# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
-#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
+# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/DESeq.manual/")
+# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/DESeq.manual/setup_table.tsv',
+#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/featureCounts/counts.txt',
 #          '0.05',
 #          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
 # ################################################################################
@@ -89,17 +89,16 @@ if ( any(grepl("^[0-9]", sampleInfo$name)) ) {
   sampleInfo[grepl("^[0-9]", sampleInfo$name),]$name = paste("X", sampleInfo[grepl("^[0-9]", sampleInfo$name),]$name, sep="")  
 }
 sampleInfo = DataFrame(as.data.frame(unclass(sampleInfo)))
-sampleInfo = sampleInfo[order(sampleInfo$name, decreasing=F),]  # order by sample name
-sampleInfo
+##sampleInfo = sampleInfo[order(sampleInfo$name, decreasing=F),]  # order by sample name
+as.character(sampleInfo$name)
 
 ## count matrix (e.g. from DESeq or featureCounts)
 countdata = read.table(countFilePath, header=TRUE)
 countdata = DataFrame(countdata)
-countdata = countdata[,order(names(countdata), decreasing=F)]  # order column names
-head(countdata)
+colnames(countdata)
 
 ## 1st check: if names of the setup table are subset of the count matrix column names
-if ( ! all( is.element(sampleInfo[,1], colnames(countdata)) ) ) {
+if ( ! all( is.element(sort(sampleInfo[,1]), sort(colnames(countdata))) ) ) {
   cat("Error! Count table column names and setup table names do NOT match!\n")
   print(as.character(sampleInfo[,1]))
   print(colnames(countdata))
@@ -109,6 +108,7 @@ if ( ! all( is.element(sampleInfo[,1], colnames(countdata)) ) ) {
 ## extract only the columns specified in the setup table
 countdata = countdata[,as.character(sampleInfo[,1])]
 head(countdata)
+colnames(countdata)
 
 ## 2nd: check if the ORDER of sample names matches as well
 if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
@@ -118,11 +118,18 @@ if ( ! all(as.character(sampleInfo$name) == colnames(countdata)) ) {
   quit(save = "no", status = 1, runLast = FALSE)   # Exit 1
 }
 
+
 dds = DESeqDataSetFromMatrix(
   countData = countdata,
   colData = sampleInfo,
   design = ~ condition)
 dds
+
+## reorder conditions by sampleInfo
+if ( dds$condition[[1]] != levels(dds$condition)[[1]] ) {
+  dds$condition = relevel(dds$condition, as.character(dds$condition[[1]]) ) 
+}
+
 colnames(dds) = sampleInfo$name
 head(assay(dds))
 
