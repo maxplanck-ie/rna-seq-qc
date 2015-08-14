@@ -138,7 +138,7 @@ info
 
 ## count table
 head(assay(dds))
-write.table(assay(dds),"DESeq2.counts_raw.tsv", sep="\t", quote=FALSE, col.names=NA) # save to file
+write.table(assay(dds),"counts.tsv", sep="\t", quote=FALSE, col.names=NA) # save to file
 
 ## DE analysis
 assign("last.warning", NULL, envir = baseenv())
@@ -220,6 +220,9 @@ if ( exists("gene_names_dic") ) {
   res@listData$gene_names = id_to_gene_name(rownames(res))
 }
 
+## DE results (all) ############################################################
+
+write.table(res,"DESeq2.results.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 ## DE ##########################################################################
 de_total = res[which(res$padj < fdr),]
