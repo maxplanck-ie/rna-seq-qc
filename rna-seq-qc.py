@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "rna-seq-qc v0.7.1"
+__version__ = "rna-seq-qc v0.7.2"
 
 
 __description__ = """
@@ -9,7 +9,7 @@ __description__ = """
 
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-    Fabian Kilpert - July 10, 2015
+    Fabian Kilpert - October 26, 2015
     email: kilpert@ie-freiburg.mpg.de
 
     This software is distributed WITHOUT ANY WARRANTY!
@@ -44,11 +44,11 @@ __description__ = """
 import argparse
 from collections import OrderedDict
 import datetime
-import gzip
+# import gzip
 import os
 import os.path
 from Queue import Queue
-import random
+# import random
 import re
 import shutil
 import socket
@@ -118,6 +118,7 @@ ucsctools_dir_path = "/package/UCSCtools/"
 hisat_path = "/package/hisat-0.1.6-beta/bin/"; hisat_ver = "HISAT-0.1.6-beta"
 R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/R/rna-seq-qc_libraries/R/x86_64-redhat-linux-gnu-library/3.2 &&"
 deseq2_ver = "DESeq2-1.8.1"
+deeptools_path = "/package/deeptools-multiheatmapper/bin/"; deeptools_ver = "deepTools multiheatmapper (future v1.6)"
 
 
 ## Different configurations for other physical machines
@@ -189,6 +190,7 @@ def parse_args():
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT option string (default: '')", type=str, default="")
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
+    parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
@@ -350,8 +352,10 @@ def run_subprocess(cmd, cwd, td, shell=False, logfile=None, backcopy=True, verbo
     """
     try:
         if verbose:
-            print "Temp dir:", td
-            print cmd
+            print "Temp dir:", td, "\n"
+            print cmd, "\n"
+
+        sys.stdout.flush() # force printing
 
         if shell == True:
             return subprocess.check_call("cd {} && ".format(td)+cmd, shell=True, executable='/bin/bash')
@@ -1452,6 +1456,56 @@ def run_featureCounts(args, q, indir):
     return os.path.join(args.outdir, outdir)
 
 
+#### BW files ############################################################################################################
+def run_bw_files(args, q, indir):
+    """
+    Run generating BW files
+    """
+    analysis_name = "BW_files"
+    args.analysis_counter += 1
+    outdir = "{}".format(analysis_name)
+    print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
+
+    if args.overwrite and os.path.isdir(outdir):
+        shutil.rmtree(outdir)
+
+    if os.path.isdir(outdir):
+        print "Output folder already present: {}".format(outdir)
+    else:
+        os.mkdir(outdir)
+        os.chdir(outdir)
+        cwd = os.getcwd()
+        logfile = os.path.join(cwd, "LOG")
+
+        print "In:", os.path.abspath(indir)
+        infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".bam")])
+
+        with open(logfile, "w") as log:
+            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+
+        if (args.paired and args.library_type == 'fr-firststrand'):
+            for infile in infiles:
+                ##bname = re.sub(".bam$","",os.path.basename(infile))
+
+                bamCoverage_path = os.path.join(deeptools_path, "bamCoverage")
+                if not os.path.isfile(bamCoverage_path):
+                    print "Error! bamCoverage NOT found:"
+                    print bamCoverage_path
+                    exit(2)
+                else:
+                    jobs = ["bash {}rna-seq-qc/RNA_bw_RPKM.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir), deeptools_path, samtools_path, args.threads),]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+            q.join()
+            if is_error:
+                exit(is_error)
+        else:
+            print "Only available for PE + fr-firstrand data!"
+
+        print "Out:", os.path.join(args.outdir, outdir)
+    os.chdir(args.outdir)
+    return os.path.join(args.outdir, outdir)
+
+
 #### DESeq2 ############################################################################################################
 
 def run_deseq2(args, q, indir):
@@ -1914,7 +1968,7 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
     try:
-        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True)
+        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
     except:
         pass
 
@@ -1955,26 +2009,31 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    # Rund DESeq2
-    if args.sample_info:
+    ## RUN bigwig file creation
+    if args.bw:
         t1 = datetime.datetime.now()
-        run_deseq2(args, q, count_dir)
+        run_bw_files(args, q, bam_dir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
-    ## Run project_summary
-    t1 = datetime.datetime.now()
-    run_project_report(args, q)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
-
-    ## Run RSeQC
-    t1 = datetime.datetime.now()
-    run_rseqc(args, q, bam_dir)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
-
-
+    # ## Run DESeq2
+    # if args.sample_info:
+    #     t1 = datetime.datetime.now()
+    #     run_deseq2(args, q, count_dir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run project_summary
+    # t1 = datetime.datetime.now()
+    # run_project_report(args, q)
+    # t2 = datetime.datetime.now()
+    # print "Duration:", t2-t1
+    #
+    # ## Run RSeQC
+    # t1 = datetime.datetime.now()
+    # run_rseqc(args, q, bam_dir)
+    # t2 = datetime.datetime.now()
+    # print "Duration:", t2-t1
 
     return args.outdir
 
