@@ -2016,24 +2016,24 @@ def main():
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
-    # ## Run DESeq2
-    # if args.sample_info:
-    #     t1 = datetime.datetime.now()
-    #     run_deseq2(args, q, count_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run project_summary
-    # t1 = datetime.datetime.now()
-    # run_project_report(args, q)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## Run RSeQC
-    # t1 = datetime.datetime.now()
-    # run_rseqc(args, q, bam_dir)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
+    ## Run DESeq2
+    if args.sample_info:
+        t1 = datetime.datetime.now()
+        run_deseq2(args, q, count_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run project_summary
+    t1 = datetime.datetime.now()
+    run_project_report(args, q)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## Run RSeQC
+    t1 = datetime.datetime.now()
+    run_rseqc(args, q, bam_dir)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
 
     return args.outdir
 
