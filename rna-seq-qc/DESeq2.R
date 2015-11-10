@@ -12,7 +12,7 @@ library("RColorBrewer")
 sessionInfo()
 
 args = commandArgs(TRUE)
-
+ 
 # ## For debugging only!!! #######################################################
 # setwd("")
 # args = c('setup_table.tsv',
@@ -222,9 +222,11 @@ id_to_gene_name = function(ids) {
 
 gene_names_df <- function(obj) {
   df = as.data.frame(obj)
-  if ( exists("gene_names_dic") ) {
-    df$gene_names = id_to_gene_name(rownames(df))
-  } 
+  if (dim(df)[[1]] > 0) {
+    if ( exists("gene_names_dic") ) {
+      df$gene_names = id_to_gene_name(rownames(df))
+    } 
+  }
   return(df)
 }
 
@@ -343,32 +345,32 @@ ggsave(file=sprintf("Fig6.PCA.pdf"), width=7, height=6)
 ##dev.off()
 
 # topN genes by pvalue
-d = data.frame(id=rownames(de_total), padj=de_total$padj)
-if ( length(rownames(d)) < topN ) topN = length(rownames(d))
-
-d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
-d_topx_padj
-plotdata = assay(rld)[as.character(d_topx_padj$id),]  # <- error
-plotdata
-
-## test
-setdiff( as.character(d_topx_padj$id), rownames(plotdata))
-
-
-# rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
-# colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
-
-if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
-plotdata
-
-pdf(sprintf("Fig7.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
-heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
-          col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),
-          main=sprintf("Top %d DE genes (by p-value)", topN), keysize=1,
-          margins = c(8,10),
-          cexRow=0.7, cexCol=0.9)
-dev.off()
-
+if (length(de_total[,1]) > 0) {
+  d = data.frame(id=rownames(de_total), padj=de_total$padj)
+  if ( length(rownames(d)) < topN ) topN = length(rownames(d))
+  
+  d_topx_padj = d[order(d$padj, decreasing=F),][1:topN,]
+  d_topx_padj
+  plotdata = assay(rld)[as.character(d_topx_padj$id),]  # <- error
+  plotdata
+  
+  ## test
+  setdiff( as.character(d_topx_padj$id), rownames(plotdata))
+  
+  # rownames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+  # colnames(plotdata) = sprintf("%s\n(%s)", colnames(rld), rld$condition) #paste(colnames(rld), rld$condition, sep="-")
+  
+  if ( exists("gene_names_dic") ) rownames(plotdata) = id_to_gene_name(rownames(plotdata))  # exchange ids by gene names
+  plotdata
+  
+  pdf(sprintf("Fig7.gene_clustering_top%i_DE_genes.pdf",topN), pointsize = 9)
+  heatmap.2(plotdata, scale="row", trace="none", dendrogram="column",
+            col=colorRampPalette(rev(brewer.pal(9,"RdBu")))(255),
+            main=sprintf("Top %d DE genes (by p-value)", topN), keysize=1,
+            margins = c(8,10),
+            cexRow=0.7, cexCol=0.9)
+  dev.off()
+}
 
 ################################################################################
 
