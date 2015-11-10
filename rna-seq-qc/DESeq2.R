@@ -14,11 +14,12 @@ sessionInfo()
 args = commandArgs(TRUE)
 
 # ## For debugging only!!! #######################################################
-# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/DESeq.manual/")
-# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/DESeq.manual/setup_table.tsv',
-#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison2_fertilized_vs_unfertilized/featureCounts/counts.txt',
+# setwd("")
+# args = c('setup_table.tsv',
+#          'counts.txt',
 #          '0.05',
-#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
+#          'gene_names')
+
 # ################################################################################
 
 plotVolcano <- function(res_obj, data=plot) {
@@ -219,32 +220,34 @@ id_to_gene_name = function(ids) {
   return(d$gene_name)
 }
 
-################################################################################
-
-if ( exists("gene_names_dic") ) {
-  cat("Gene names are available\n")
-  # update res with gene names
-  res@listData$gene_names = id_to_gene_name(rownames(res))
+gene_names_df <- function(obj) {
+  df = as.data.frame(obj)
+  if ( exists("gene_names_dic") ) {
+    df$gene_names = id_to_gene_name(rownames(df))
+  } 
+  return(df)
 }
 
-## DE results (all) ############################################################
+################################################################################
 
-write.table(res,"DESeq2.results.tsv", sep="\t", quote=FALSE, col.names=NA)
+## DE results (all) ############################################################
+write.table(gene_names_df(res),"DESeq2.results.tsv", sep="\t", quote=FALSE, col.names=NA)
+
 
 ## DE ##########################################################################
 de_total = res[which(res$padj < fdr),]
 length(de_total[,1])
-write.table(de_total[order(de_total$padj, decreasing=F),],"DESeq2.de_all.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(gene_names_df(de_total[order(de_total$padj, decreasing=F),]),"DESeq2.de_all.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_up = de_total[which(de_total$log2FoldChange>0),]
 de_up = de_up[order(de_up$padj, decreasing=F),]   # order by adjusted p-value
 length(de_up[,1])
-write.table(de_up,"DESeq2.de_up.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(gene_names_df(de_up),"DESeq2.de_up.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 de_down = de_total[which(de_total$log2FoldChange<0),]
 de_down = de_down[order(de_down$padj, decreasing=F),]           # order by adjusted p-value
 length(de_down[,1])
-write.table(de_down,"DESeq2.de_down.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(gene_names_df(de_down),"DESeq2.de_down.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 # save info to stats file
 write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
@@ -292,7 +295,7 @@ rld = rlog(dds)
 head(assay(rld))
 
 # save rlog tranformed counts to file
-write.table(assay(rld),"DESeq2.counts_rlog.tsv", sep="\t", quote=FALSE, col.names=NA)
+write.table(gene_names_df(assay(rld)),"DESeq2.counts_rlog.tsv", sep="\t", quote=FALSE, col.names=NA)
 
 # show that DEseq's rlog works; not really needed for data analysis
 ##par(mfrow=c(1,2))
@@ -316,7 +319,7 @@ par(cex.main=1)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
-          notecex=1.6,
+          notecex=1.2,
           cexRow=1.2, cexCol=1.2, margins=c(10,10),
           cellnote=round(sampleDistMatrix,1),
           notecol="black")
