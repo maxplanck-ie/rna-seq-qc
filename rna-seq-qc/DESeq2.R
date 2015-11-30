@@ -12,13 +12,14 @@ library("RColorBrewer")
 sessionInfo()
 
 args = commandArgs(TRUE)
+print(args)
  
 # ## For debugging only!!! #######################################################
-# setwd("")
-# args = c('setup_table.tsv',
-#          'counts.txt',
+# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/07_introns/Comparison1_TRR_KD_vs_WT/DESeq2/")
+# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison2_fertilized_vs_unfertilized/setup_table.tsv',
+#          '/data/manke/kilpert/Nicola/A277_TRR_KD/07_introns/Comparison2_fertilized_vs_unfertilized/counts.tsv',
 #          '0.05',
-#          'gene_names')
+#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
 
 # ################################################################################
 
@@ -257,7 +258,7 @@ write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 # MA and volcano plot
 pdf("Fig2.MA_plot.pdf", width=6, height=6)
 par(mfrow=c(1,1))
-plotMA(res, alpha=0.1, ylim=c(-3,3), 
+plotMA(res, alpha=fdr, ylim=c(-3,3),
        main=sprintf("MA-plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
        ylab="log2 fold change")
 dev.off()
