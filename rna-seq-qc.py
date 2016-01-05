@@ -135,12 +135,13 @@ if socket.gethostname() == "pc305.immunbio.mpg.de":
     feature_counts_path = ""; feature_counts_ver = "featureCounts"
     htseq_count_path = ""; htseq_count_ver = "HTSeq"
     R_path = "/usr/bin/"; R_ver = "R-3.2.0"
-    samtools_path = ""; samtools_ver = "Samtools"
+    samtools_path = ""; samtools_ver = "Samtools-1.2"
     samtools_export = ""
     ucsctools_dir_path = ""
     hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/"; hisat_ver = "HISAT"
     R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2 &&"
     deseq2_ver = "DESeq2-1.8.1"
+    deeptools_path = "/home/kilpert/Software/deepTools_release-1.6/deepTools/bin/"; deeptools_ver = "deepTools-1.6"
 
 
 #### DEFAULT VARIABLES #################################################################################################
@@ -191,6 +192,7 @@ def parse_args():
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
+    parser.add_argument("--rseqc", dest="rseqc", action="store_true", default=False, help="Run RSeQC")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
@@ -1915,124 +1917,125 @@ def main():
         except:
             print ""
 
-    # ### Output dir
-    # ##print "Outdir:", args.outdir
-    # if not os.path.isdir(args.outdir):
-    #     os.makedirs(args.outdir)
-    # os.chdir(args.outdir)
-    #
-    # args.analysis_counter = 0   # Counter for analyzes conducted
-    # indir = args.indir
-    #
-    # check_for_paired_infiles(args, indir, ".fastq.gz")      # sets the args.paired to True if sequences are paired end
-    #
-    # q = Queue()
-    # for i in range(args.parallel):
-    #     worker = Thread(target=queue_worker, args=(q, args.verbose))
-    #     worker.setDaemon(True)
-    #     worker.start()
+    ### Output dir
+    ##print "Outdir:", args.outdir
+    if not os.path.isdir(args.outdir):
+        os.makedirs(args.outdir)
+    os.chdir(args.outdir)
 
-    # ## FASTQ downsampling
-    # t1 = datetime.datetime.now()
-    # if args.fastq_downsample:
-    #     indir = run_fastq_downsampling(args, q, args.indir)
-    # ### print "Output folder:", indir
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## Run FastQC
-    # t1 = datetime.datetime.now()
-    # run_fastqc(args, q, indir)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## Run Trim Galore!
-    # if args.trim:
-    #     t1 = datetime.datetime.now()
-    #     indir = run_trim_galore(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run FastQC on trimmed reads
-    # if args.trim:
-    #     ## Run FastQC
-    #     t1 = datetime.datetime.now()
-    #     run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run library_type
-    # t1 = datetime.datetime.now()
-    # run_library_type(args, q, indir)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    # try:
-    #     args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
-    # except:
-    #     pass
-    #
-    # if args.paired and args.mapping_prg == 'TopHat2':
-    #     ## Run strand_specificity
-    #     t1 = datetime.datetime.now()
-    #     run_distance_metrics(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Stop here if requested by user (--no-bam)
-    # if args.no_bam:
-    #     print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
-    #     print "Output stored in: {}\n".format(args.outdir)
-    #     exit(0)
-    #
-    # ## Run TopHat
-    # if args.mapping_prg == 'TopHat2':
-    #     t1 = datetime.datetime.now()
-    #     bam_dir = run_tophat(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    # elif args.mapping_prg == 'HISAT':
-    #     t1 = datetime.datetime.now()
-    #     bam_dir = run_hisat(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run htseq-count
-    # t1 = datetime.datetime.now()
-    # if args.count_prg == "featureCounts":
-    #     count_dir = run_featureCounts(args, q, bam_dir)
-    # elif args.count_prg == "htseq-count":
-    #     count_dir = run_htseq_count(args, q, bam_dir)
-    # else:
-    #     print "Error! Unknown feature counting program:", args.count_prg
-    #     exit(1)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## RUN bigwig file creation
-    # if args.bw:
-    #     t1 = datetime.datetime.now()
-    #     run_bw_files(args, q, bam_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run DESeq2
-    # if args.sample_info:
-    #     t1 = datetime.datetime.now()
-    #     run_deseq2(args, q, count_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run project_summary
-    # t1 = datetime.datetime.now()
-    # run_project_report(args, q)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## Run RSeQC
-    # t1 = datetime.datetime.now()
-    # run_rseqc(args, q, bam_dir)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
+    args.analysis_counter = 0   # Counter for analyzes conducted
+    indir = args.indir
+
+    check_for_paired_infiles(args, indir, ".fastq.gz")      # sets the args.paired to True if sequences are paired end
+
+    q = Queue()
+    for i in range(args.parallel):
+        worker = Thread(target=queue_worker, args=(q, args.verbose))
+        worker.setDaemon(True)
+        worker.start()
+
+    ## FASTQ downsampling
+    t1 = datetime.datetime.now()
+    if args.fastq_downsample:
+        indir = run_fastq_downsampling(args, q, args.indir)
+    ### print "Output folder:", indir
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## Run FastQC
+    t1 = datetime.datetime.now()
+    run_fastqc(args, q, indir)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## Run Trim Galore!
+    if args.trim:
+        t1 = datetime.datetime.now()
+        indir = run_trim_galore(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run FastQC on trimmed reads
+    if args.trim:
+        ## Run FastQC
+        t1 = datetime.datetime.now()
+        run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run library_type
+    t1 = datetime.datetime.now()
+    run_library_type(args, q, indir)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+    try:
+        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
+    except:
+        pass
+
+    if args.paired and args.mapping_prg == 'TopHat2':
+        ## Run strand_specificity
+        t1 = datetime.datetime.now()
+        run_distance_metrics(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Stop here if requested by user (--no-bam)
+    if args.no_bam:
+        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
+        print "Output stored in: {}\n".format(args.outdir)
+        exit(0)
+
+    ## Run TopHat
+    if args.mapping_prg == 'TopHat2':
+        t1 = datetime.datetime.now()
+        bam_dir = run_tophat(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+    elif args.mapping_prg == 'HISAT':
+        t1 = datetime.datetime.now()
+        bam_dir = run_hisat(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run htseq-count
+    t1 = datetime.datetime.now()
+    if args.count_prg == "featureCounts":
+        count_dir = run_featureCounts(args, q, bam_dir)
+    elif args.count_prg == "htseq-count":
+        count_dir = run_htseq_count(args, q, bam_dir)
+    else:
+        print "Error! Unknown feature counting program:", args.count_prg
+        exit(1)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## RUN bigwig file creation
+    if args.bw:
+        t1 = datetime.datetime.now()
+        run_bw_files(args, q, bam_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run DESeq2
+    if args.sample_info:
+        t1 = datetime.datetime.now()
+        run_deseq2(args, q, count_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run project_summary
+    t1 = datetime.datetime.now()
+    run_project_report(args, q)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## Run RSeQC
+    if args.rseqc:
+        t1 = datetime.datetime.now()
+        run_rseqc(args, q, bam_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
 
     return args.outdir
 
