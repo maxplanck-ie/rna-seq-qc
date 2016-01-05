@@ -22,10 +22,8 @@ main_outdir = args[2]
 hostname = Sys.info()["nodename"]
 if (hostname == "pc305.immunbio.mpg.de") {
   samtools_dir = "/home/kilpert/Software/samtools/samtools-1.2/"
-} else if ( startsWith(hostname,'deep') ) {
-  samtools_dir = "/package/samtools-1.2/bin/"
 } else {
-  samtools_dir = ""
+  samtools_dir = "/package/samtools-1.2/bin/"
 }
 
 
