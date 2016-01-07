@@ -630,7 +630,7 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
                 ## or:
 
                 ## just from the head of the file using shell commands
-                jobs = ["zcat {} | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
+                jobs = ["zcat {} 2>/dev/null | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
                 ## Note that there is a not misleading "gzip: stdout: Broken pipe" message. The output is fine though!!!
             else:
                 ## print "Using seed:", args.seed
