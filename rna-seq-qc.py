@@ -316,7 +316,7 @@ def check_for_paired_infiles(args, indir, ext, verbose=False):
     paired_infiles = OrderedDict()
     for infile in infiles:
         fname = os.path.basename(infile).replace(ext, "")
-        m = re.match("^(\w+)_R*[1|2]$", fname)
+        m = re.match("^(.+)_R*[1|2]$", fname)
         if m:
             bname = m.group(1)
             if bname not in paired_infiles:
