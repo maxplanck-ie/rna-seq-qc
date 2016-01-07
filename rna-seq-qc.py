@@ -126,8 +126,8 @@ if socket.gethostname() == "pc305.immunbio.mpg.de":
     fastqc_path = "/home/kilpert/Software/bin/"; fastqc_ver = "FastQC"
     trim_galore_path = "/home/kilpert/Software/trim_galore/trim_galore_v0.4.0/"; trim_galore_ver = "TrimGalore-v0.4.0"
     cutadapt_activate = ""; cutadapt_ver = "Cutadapt"
-    rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.1/scripts/"; rseqc_ver = "RSeQC-2.6.1"
-    rseqc_activate = "source activate pc305_RSeQC_2.6.1 &&"
+    rseqc_path = "/home/kilpert/Software/RSeQC/RSeQC-2.6.3/build/scripts-2.7/"; rseqc_ver = "RSeQC-2.6.3"
+    rseqc_activate = ""
     bowtie2_path = ""; bowtie2_ver = "Bowtie2"
     bowtie2_export = ""
     picardtools_path = "/home/kilpert/Software/picard-tools/picard-tools-1.115/"; picardtools_ver = "Picard-tools-1.115"
@@ -875,10 +875,11 @@ def run_library_type(args, q, indir):
             infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir)) if f.endswith(".genome_mapped.bam")])
             for infile in infiles:
                 print infile
-                bname = " ".join(infile.split(".")[:-2])
+                bname = re.sub(".genome_mapped.bam$","",os.path.basename(infile))
+
                 jobs = ["{} {}infer_experiment.py -i {} -r {} > {}"\
                             .format(rseqc_activate, rseqc_path, os.path.join(cwd, infile), args.bed, os.path.join(cwd, "infer_experiment", bname+".infer_experiment.txt")),
-                        "rm {}.genome_mapped.bam".format(os.path.join(args.outdir, outdir, bname)),
+                        "rm {}".format(os.path.join(args.outdir, outdir, infile)),
                         ]
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, shell=True, keep_temp=False))
             q.join()
@@ -891,9 +892,8 @@ def run_library_type(args, q, indir):
 
             infiles = sorted([f for f in os.listdir(os.path.join(args.outdir, outdir, "infer_experiment")) if f.endswith(".infer_experiment.txt")])
             for infile in infiles:
-                bname = " ".join(infile.split(".")[:-2])
+                bname = re.sub(".infer_experiment.txt$","",os.path.basename(infile))
 
-                # library_type = get_strand_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname), "tophat")
                 library_type = get_library_type_from_rseqc("infer_experiment/{}.infer_experiment.txt".format(bname))
 
                 if library_type not in library_type_dic:
@@ -1085,7 +1085,8 @@ def run_distance_metrics(args, q, indir):
             ## RSeQC (default)
             if args.insert_metrics == "RSeQC":
                 for infile in infiles:
-                    bname = " ".join(infile.split(".")[:-2])
+                    bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
+
                     jobs = ["export PATH={}:$PATH && {} {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path,
                                         os.path.join(cwd, infile),
                                         os.path.join(cwd, "inner_distance" , bname),
@@ -1101,7 +1102,7 @@ def run_distance_metrics(args, q, indir):
                     exit(is_error)
 
             for infile in infiles:
-                bname = " ".join(infile.split(".")[:-2])
+                bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
                 with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
                     lines = f.readlines()
                     e = lines[1].split()
