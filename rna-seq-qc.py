@@ -1488,6 +1488,7 @@ def run_bw_files(args, q, indir):
         with open(logfile, "w") as log:
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
+        ## PE
         if (args.paired and args.library_type == 'fr-firststrand'):
             for infile in infiles:
                 ##bname = re.sub(".bam$","",os.path.basename(infile))
@@ -1498,13 +1499,28 @@ def run_bw_files(args, q, indir):
                     print bamCoverage_path
                     exit(2)
                 else:
-                    jobs = ["bash {}rna-seq-qc/RNA_bw_RPKM.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir), deeptools_path, samtools_path, args.threads),]
+                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_log2ratio_PE.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir), deeptools_path, samtools_path, args.threads),]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
             q.join()
             if is_error:
                 exit(is_error)
+        ## SE
         else:
-            print "Only available for PE + fr-firstrand data!"
+            ##print "Only available for PE + fr-firstrand data!"
+            for infile in infiles:
+                ##bname = re.sub(".bam$","",os.path.basename(infile))
+
+                bamCoverage_path = os.path.join(deeptools_path, "bamCoverage")
+                if not os.path.isfile(bamCoverage_path):
+                    print "Error! bamCoverage NOT found:"
+                    print bamCoverage_path
+                    exit(2)
+                else:
+                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_log2ratio_SE.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir), deeptools_path, samtools_path, args.threads),]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+            q.join()
+            if is_error:
+                exit(is_error)
 
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
