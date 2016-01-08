@@ -115,8 +115,8 @@ if ( file.exists( indir ) ){
 
 
 ## BAM: mapped #################################################################
-## HISAT
-indir = file.path(main_outdir,"HISAT")
+## HISAT2
+indir = file.path(main_outdir,"HISAT2")
 if ( file.exists( indir ) ){
   files <- list.files(indir, pattern="*.bam$", full.names=T)
   files
@@ -133,8 +133,8 @@ if ( file.exists( indir ) ){
     num_reads = c( num_reads, num )
     cat(paste(name, num, "\n"), sep=" ")
   }
-  report$HISAT = num_reads
-  report$HISAT_perc = apply(report, 1, function(x) x["HISAT"]/x["FASTQ"]*100)
+  report$HISAT2 = num_reads
+  report$HISAT2_perc = apply(report, 1, function(x) x["HISAT2"]/x["FASTQ"]*100)
   report
 }
 

@@ -45,7 +45,7 @@ plots2 = file.path(d, "plots2.png")
 
 \normalsize
 
-\Sexpr{format(Sys.time(), "%F %H:%M:%S")} 
+\Sexpr{format(Sys.time(), "%F %H:%M:%S")}
 
 % Pipeline: `r as.character(rd_dic["version"])` <!-- [(Documentation)](http://wiki.immunbio.mpg.de/wiki/index.php/RNA-seq_pipeline_%28rna-seq-qc.py%29) -->
 
@@ -63,7 +63,7 @@ df = read.table(file.path(d, "Report.tsv"))
 colnames(df)[grepl("_perc$",colnames(df))] = "%"
 kable(df, format="latex", digits=1, booktabs=TRUE, longtable=TRUE)
 @
-FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, HISAT/TopHat2: number of mapped reads defined by samtools flags (-f3 -F256) for proper pair + primary alignment, featureCounts/htseq-count: counts of reads mapped to genes, \%: percentage compared to the starting number of sequencing reads
+FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, HISAT2/TopHat2: number of mapped reads defined by samtools flags (-f3 -F256) for proper pair + primary alignment, featureCounts/htseq-count: counts of reads mapped to genes, \%: percentage compared to the starting number of sequencing reads
 
 
 \section{Workflow software}
@@ -71,13 +71,13 @@ FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, H
 \Sexpr{rd_dic["bowtie2_ver"]},
 \Sexpr{rd_dic["cutadapt_ver"]},
 \Sexpr{rd_dic["deseq2_ver"]},
-\Sexpr{rd_dic["fastqc_ver"]}, 
+\Sexpr{rd_dic["fastqc_ver"]},
 \Sexpr{rd_dic["feature_counts_ver"]},
 \Sexpr{rd_dic["hisat_ver"]}, 
 \Sexpr{rd_dic["picardtools_ver"]},
-\Sexpr{rd_dic["R_ver"]}, 
+\Sexpr{rd_dic["R_ver"]},
 \Sexpr{rd_dic["rseqc_ver"]},
-\Sexpr{rd_dic["samtools_ver"]}, 
+\Sexpr{rd_dic["samtools_ver"]},
 \Sexpr{rd_dic["tophat2_ver"]},
 \Sexpr{rd_dic["trim_galore_ver"]}
 \newpage
