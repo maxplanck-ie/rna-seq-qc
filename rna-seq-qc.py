@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "rna-seq-qc v0.7.2"
+__version__ = "rna-seq-qc v0.8.0"
 
 
 __description__ = """
@@ -134,7 +134,7 @@ if socket.gethostname() == "pc305.immunbio.mpg.de":
     tophat2_path = ""; tophat2_ver = "TopHat-2"
     feature_counts_path = ""; feature_counts_ver = "featureCounts"
     htseq_count_path = ""; htseq_count_ver = "HTSeq"
-    R_path = "/usr/bin/"; R_ver = "R-3.2.0"
+    R_path = "/usr/bin/"; R_ver = "R-3.2.3"
     samtools_path = ""; samtools_ver = "Samtools-1.2"
     samtools_export = ""
     ucsctools_dir_path = ""
@@ -1837,6 +1837,7 @@ def run_project_report(args, q):
                 if line:
                     f.write(line+"\n")
 
+        ## DESeq2
         if args.sample_info:
             jobs = ["convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
                     "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
