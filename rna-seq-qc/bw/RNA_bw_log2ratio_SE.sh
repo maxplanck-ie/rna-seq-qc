@@ -9,7 +9,7 @@ threads="$5"
 [ -n "$4" ] || samtools="/package/samtools-1.2/bin/samtools"
 [ -n "$5" ] || threads=4
 
-opts="-p $threads --binSize 25 --normalizeUsingRPKM"
+opts="-p $threads --binSize 25"
 
 [ -f $deeptools_dir/activate ] && source $deeptools_dir/activate
 
