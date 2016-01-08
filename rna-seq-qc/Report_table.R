@@ -36,7 +36,7 @@ unpair <- function(allfiles){
   files = c()
   names = c()
   for (file in allfiles) {
-    name = gsub("_R1+.fastq.gz$|_R2+.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
     
     if (!name %in% names) {
       names = c(names, name)
@@ -52,7 +52,7 @@ is_paired = function(allfiles){
   names = c()
   paired = F
   for (file in allfiles) {
-    name = gsub("_R1+.fastq.gz$|_R2+.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
     
     if (!name %in% names) {
       names = c(names, name)
@@ -77,7 +77,7 @@ if (file.exists(indir)){
   names = c()
   
   for (file in unpair(allfiles)) {
-    name = gsub("_R1+.fastq.gz$|_R2+.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
     names = c(names, name)
     num = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
     num_reads = c( num_reads, num )  
@@ -102,7 +102,7 @@ if ( file.exists( indir ) ){
   names = c()
   num_reads = c()
   for (file in unpair(files)) {
-    name = gsub("_R1+.fastq.gz$|_R2+.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
     names = c( names, name )
     num = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
     num_reads = c( num_reads, num )
@@ -128,7 +128,7 @@ if ( file.exists( indir ) ){
     if (paired==T) {
       num = as.numeric( system(sprintf("%s view -c -f3 -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -F256 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
     num_reads = c( num_reads, num )
     cat(paste(name, num, "\n"), sep=" ")
@@ -151,7 +151,7 @@ if ( file.exists( indir ) ){
     if (paired==T) {
       num = as.numeric( system(sprintf("%s view -c -f3 -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -F256 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
     num_reads = c( num_reads, num )
     cat(paste(name, num, "\n"), sep=" ")
