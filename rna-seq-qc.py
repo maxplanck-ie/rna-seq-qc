@@ -9,7 +9,7 @@ __description__ = """
 
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-    Fabian Kilpert - October 26, 2015
+    Fabian Kilpert - January 08, 2016
     email: kilpert@ie-freiburg.mpg.de
 
     This software is distributed WITHOUT ANY WARRANTY!
@@ -26,7 +26,7 @@ __description__ = """
     base name but ending either in "_R1" or "_R2" right in front of the .fastq.gz extension.
     (e.g. reads_R1.fastq.gz, reads_R2.fastq.gz). In addition, a specific genome version argument
     must be provided (e.g. -g mm10) to define the reference data used for annotation.
-    This loads a number of indexes for mapping programs (Bowtie2, TopHat2, HISAT, etc.) from the
+    This loads a number of indexes for mapping programs (Bowtie2, TopHat2, HISAT2 (new!), etc.) from the
     corresponding configuration file of the rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg).
     Additional genomes for selection can be provided as cfg-files by the user. The pipeline
     works for single end and paired end sequences alike.
@@ -115,7 +115,8 @@ samtools_path = "/package/samtools-1.2/"; samtools_ver = "Samtools-1.2"
 samtools_export = "export PATH={}:$PATH &&".format(samtools_path)
 ucsctools_dir_path = "/package/UCSCtools/"
 #hisat_path = "/package/hisat-0.1.5-beta/bin/hisat"
-hisat_path = "/package/hisat-0.1.6-beta/bin/"; hisat_ver = "HISAT-0.1.6-beta"
+#hisat_path = "/package/hisat-0.1.6-beta/bin/"; hisat_ver = "HISAT-0.1.6-beta"
+hisat_path = "/package/hisat2-2.0.0-beta/"; hisat_ver = "HISAT2-2.0.0-beta"
 R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/R/rna-seq-qc_libraries/R/x86_64-redhat-linux-gnu-library/3.2 &&"
 deseq2_ver = "DESeq2-1.8.1"
 deeptools_path = "/package/deeptools-2.0.0/bin/"; deeptools_ver = "deepTools-2.0"
@@ -138,7 +139,8 @@ if socket.gethostname() == "pc305.immunbio.mpg.de":
     samtools_path = ""; samtools_ver = "Samtools-1.2"
     samtools_export = ""
     ucsctools_dir_path = ""
-    hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/"; hisat_ver = "HISAT"
+    #hisat_path = "/home/kilpert/Software/hisat/hisat-0.1.5-beta/"; hisat_ver = "HISAT"
+    hisat_path = "/home/kilpert/Software/hisat/hisat2-2.0.1-beta/"; hisat_ver = "HISAT2-2.0.1-beta"
     R_libraries_export = "export R_LIBS_USER=/data/manke/repository/scripts/rna-seq-qc/R/x86_64-pc-linux-gnu-library/3.2 &&"
     deseq2_ver = "DESeq2-1.8.1"
     deeptools_path = "/home/kilpert/Software/deepTools_release-1.6/deepTools/bin/"; deeptools_ver = "deepTools-1.6"
@@ -187,8 +189,8 @@ def parse_args():
     parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard (default) or RSeQC", type=str, default="Picard")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts (default) or htseq-count", type=str, default="featureCounts")
     parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: auto)", type=str, default="auto")
-    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 (default) or HISAT", type=str, default="TopHat2")
-    parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT option string (default: '')", type=str, default="")
+    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 (default) or HISAT2", type=str, default="TopHat2")
+    parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '')", type=str, default="")
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
@@ -461,7 +463,7 @@ def convert_library_type(library_type, prog, paired):
             new = ''
 
 
-    elif prog == "HISAT":
+    elif prog == "HISAT2":
         if library_type == 'fr-firststrand' and paired==True:
             new = 'RF'
         elif library_type == 'fr-secondstrand' and paired==True:
@@ -915,7 +917,7 @@ def run_library_type(args, q, indir):
         with open(os.path.join(cwd, "library_type.txt"), "w") as f:
             f.write("TopHat2\t{}\n".format(library_type))
             f.write("RSeQC\t{}\n".format(convert_library_type( library_type, 'RSeQC', args.paired ) ))
-            f.write("HISAT\t{}\n".format(convert_library_type( library_type, 'HISAT', args.paired ) ))
+            f.write("HISAT2\t{}\n".format(convert_library_type( library_type, 'HISAT2', args.paired ) ))
             f.write("htseq-count\t{}\n".format(convert_library_type( library_type, 'htseq-count', args.paired ) ))
             f.write("featureCounts\t{}\n".format(convert_library_type( library_type, 'featureCounts', args.paired ) ))
 
@@ -1189,11 +1191,11 @@ def run_tophat(args, q, indir):
     return os.path.join(args.outdir, outdir)
 
 
-def run_hisat(args, q, indir):
+def run_hisat2(args, q, indir):
     """
-    Run HISAT mapping.
+    Run HISAT2 mapping.
     """
-    analysis_name = "HISAT"
+    analysis_name = "HISAT2"
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
@@ -1216,7 +1218,7 @@ def run_hisat(args, q, indir):
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
         ## read library type from file
-        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "HISAT" )
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "HISAT2" )
         if library_type == "unstranded":
             library_type = ""
         else:
@@ -1230,7 +1232,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1261,7 +1263,7 @@ def run_hisat(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
@@ -1289,7 +1291,7 @@ def run_hisat(args, q, indir):
         if is_error:
             exit(is_error)
 
-        ## Generate links in main HISAT output folder and index files
+        ## Generate links in main HISAT2 output folder and index files
         for infile in infiles:
             if args.paired:
                 bname = re.sub("_R*[1|2].fastq.gz$", "", os.path.basename(infile[0]))
@@ -1909,7 +1911,7 @@ def main():
         print "Genome index (Bowtie2):", args.genome_index
         print "Transcriptome index (TopHat2):", args.transcriptome_index
         print "Mapping program:", args.mapping_prg
-        print "HISAT index:", args.hisat_index
+        print "HISAT2 index:", args.hisat_index
         print "Count program:", args.count_prg
         print "GTF:", args.gtf
         print "BED:", args.bed
@@ -1994,9 +1996,9 @@ def main():
         bam_dir = run_tophat(args, q, indir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
-    elif args.mapping_prg == 'HISAT':
+    elif args.mapping_prg == 'HISAT2':
         t1 = datetime.datetime.now()
-        bam_dir = run_hisat(args, q, indir)
+        bam_dir = run_hisat2(args, q, indir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
