@@ -1499,8 +1499,8 @@ def run_bw_files(args, q, indir):
                     print bamCoverage_path
                     exit(2)
                 else:
-                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_PE_prime_quality.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"prime_quality"), deeptools_path, samtools_path, args.threads),
-                            "bash {}rna-seq-qc/bw/RNA_bw_PE_full.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"full"), deeptools_path, samtools_path, args.threads),]
+                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_PE_best.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"best"), deeptools_path, samtools_path, args.threads),
+                            "bash {}rna-seq-qc/bw/RNA_bw_PE_all.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"all"), deeptools_path, samtools_path, args.threads),]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
             q.join()
             if is_error:
@@ -1517,8 +1517,8 @@ def run_bw_files(args, q, indir):
                     print bamCoverage_path
                     exit(2)
                 else:
-                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_SE_prime_quality.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"prime_quality"), deeptools_path, samtools_path, args.threads),
-                            "bash {}rna-seq-qc/bw/RNA_bw_SE_full.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"full"), deeptools_path, samtools_path, args.threads),]
+                    jobs = ["bash {}rna-seq-qc/bw/RNA_bw_SE_best.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"best"), deeptools_path, samtools_path, args.threads),
+                            "bash {}rna-seq-qc/bw/RNA_bw_SE_all.sh {} {} {} {} {}".format(script_path, infile, os.path.join(args.outdir,outdir,"all"), deeptools_path, samtools_path, args.threads),]
                     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
             q.join()
             if is_error:
