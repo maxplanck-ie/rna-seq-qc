@@ -22,7 +22,7 @@ function run {
     eval $1 2>&1 | tee -a $outdir/LOG
 }
 
-[ ! -d $outdir ] || mkdir -p $outdir
+[ -d $outdir ] || mkdir -p $outdir
 cd $outdir
 
 
