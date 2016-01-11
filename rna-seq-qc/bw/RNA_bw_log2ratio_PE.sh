@@ -33,7 +33,7 @@ bname=$(basename ${infile%.bam})
 ##echo $cname
 
 ## Both strands
-run "[ -f $outdir/${bname}.bothstrands.bam ] || $samtools view -b -f 3 -F 256 $infile > $outdir/${bname}.bothstrands.bam"
+run "[ -f $outdir/${bname}.bothstrands.bam ] || $samtools view -b -f 3 -F 256 -q 20 $infile > $outdir/${bname}.bothstrands.bam"
 run "[ -f $outdir/${bname}.bothstrands.bam.bai ] || $samtools index $outdir/${bname}.bothstrands.bam"
 run "[ -f $outdir/${bname}.bw ] || $deeptools_dir/bamCoverage -b ${bname}.bothstrands.bam $opts -o $outdir/${bname}.bw"
 ##total=$($samtools view -c -F256 ${bname}.bothstrands.bam | awk '{print $1 / 2}')
