@@ -1462,11 +1462,11 @@ def run_featureCounts(args, q, indir):
 
 
 #### BW files ############################################################################################################
-def run_bw_files(args, q, indir):
+def run_bigWig(args, q, indir):
     """
     Run generating BW files
     """
-    analysis_name = "BW_files"
+    analysis_name = "bigWig"
     args.analysis_counter += 1
     outdir = "{}".format(analysis_name)
     print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
@@ -2035,7 +2035,7 @@ def main():
     ## RUN bigwig file creation
     if args.bw:
         t1 = datetime.datetime.now()
-        run_bw_files(args, q, bam_dir)
+        run_bigWig(args, q, bam_dir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
