@@ -63,7 +63,7 @@ df = read.table(file.path(d, "Report.tsv"))
 colnames(df)[grepl("_perc$",colnames(df))] = "%"
 kable(df, format="latex", digits=1, booktabs=TRUE, longtable=TRUE)
 @
-FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, HISAT2/TopHat2: number of mapped reads defined by samtools flags (-f3 -q20) for proper pair + primary alignment, featureCounts/htseq-count: counts of reads mapped to genes, \%: percentage compared to the starting number of sequencing reads
+FASTQ: number of sequencing reads, TrimGalore: number of reads after trimming, HISAT2/TopHat2: number of mapped reads defined by samtools flags (SE: -q20; PE: -f3 -q20) for proper pair + primary alignment, featureCounts/htseq-count: counts of reads mapped to genes, \%: percentage compared to the starting number of sequencing reads
 
 
 \section{Workflow software}
