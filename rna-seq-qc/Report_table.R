@@ -126,9 +126,9 @@ if ( file.exists( indir ) ){
     name = gsub(".bam$","",basename(file))
     
     if (paired==T) {
-      num = as.numeric( system(sprintf("%s view -c -f3 -q20 -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -q20 -F256 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
     num_reads = c( num_reads, num )
     cat(paste(name, num, "\n"), sep=" ")
@@ -149,9 +149,9 @@ if ( file.exists( indir ) ){
     name = gsub(".bam$","",basename(file))
     
     if (paired==T) {
-      num = as.numeric( system(sprintf("%s view -c -f3 -q20 -F256 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -q20 -F256 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
+      num = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
     num_reads = c( num_reads, num )
     cat(paste(name, num, "\n"), sep=" ")
