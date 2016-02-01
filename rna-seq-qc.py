@@ -198,7 +198,7 @@ def parse_args():
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
-    parser.add_argument("--DE", dest="sample_info", help="Information on samples (required for DE analysis); see rna-seq-qc/example.setup_table.tsv for example. IMPORTANT: The first entry defines which group of samples are control. By this, the order of comparison and likewise the sign of values can be changed!.")
+    parser.add_argument("--DE", dest="sample_info", help="Information on samples (required for DE analysis); see rna-seq-qc/example.setup_table.tsv for example. IMPORTANT: The first entry defines which group of samples are control. By this, the order of comparison and likewise the sign of values can be changed!")
 
     ### Positional arguments (required!)
     args = parser.parse_args()
