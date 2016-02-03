@@ -1232,7 +1232,7 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -F256 -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1263,7 +1263,7 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -F256 -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
