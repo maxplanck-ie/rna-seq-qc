@@ -1,9 +1,9 @@
-rna-seq-qc v0.8.1
+rna-seq-qc v0.8.2
 =================
 
 RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-Fabian Kilpert - January 08, 2016
+    Fabian Kilpert - February 04, 2016
 email: kilpert@ie-freiburg.mpg.de
 
 This software is distributed WITHOUT ANY WARRANTY!

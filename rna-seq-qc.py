@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-__version__ = "rna-seq-qc v0.8.1"
+__version__ = "rna-seq-qc v0.8.2"
 
 
 __description__ = """
@@ -9,7 +9,7 @@ __description__ = """
 
     RNA-seq pipeline for processing RNA sequence data from high throughput sequencing.
 
-    Fabian Kilpert - January 08, 2016
+    Fabian Kilpert - February 04, 2016
     email: kilpert@ie-freiburg.mpg.de
 
     This software is distributed WITHOUT ANY WARRANTY!
@@ -193,6 +193,7 @@ def parse_args():
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '')", type=str, default="")
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
+    parser.add_argument("--secondary_alignments", dest="secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!!")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
     parser.add_argument("--rseqc", dest="rseqc", action="store_true", default=False, help="Run RSeQC")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
@@ -1150,6 +1151,12 @@ def run_tophat(args, q, indir):
         ## read library type from file
         library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "TopHat2" )
 
+        ## set variable to filter for multi mapping reads
+        if args.secondary_alignments:
+            secondary_alignments = "--report-secondary-alignments"   # secondary alignments
+        else:
+            secondary_alignments = ""   # primary alignments
+
         if args.paired:
             for pair in infiles:
                 bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
@@ -1157,8 +1164,8 @@ def run_tophat(args, q, indir):
                 ## read metrics from file
                 mate_inner_dist, mate_std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate-inner-dist", "mate-std-dev" )
 
-                jobs = ["{} {} {}tophat2 {} --num-threads {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}"\
-                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, library_type, mate_inner_dist, mate_std_dev,
+                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}"\
+                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, secondary_alignments, library_type, mate_inner_dist, mate_std_dev,
                             os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
                             #re.sub("_R*[1|2].fastq.gz","",os.path.basename(pair[0])), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
 
@@ -1167,8 +1174,8 @@ def run_tophat(args, q, indir):
             for infile in infiles:
                 bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
 
-                jobs = ["{} {} {}tophat2 {} --num-threads {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
-                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
+                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
+                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, secondary_alignments, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         print
@@ -1224,6 +1231,12 @@ def run_hisat2(args, q, indir):
         else:
             library_type = "--rna-strandness "+library_type
 
+        ## set variable to filter for multi mapping reads
+        if args.secondary_alignments:
+            secondary_alignments = ""         # all alignments
+        else:
+            secondary_alignments = "-F256"    # primary alignments only
+
         ## PE
         if args.paired:
             for pair in infiles:
@@ -1232,7 +1245,7 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view -F256 -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
@@ -1240,6 +1253,7 @@ def run_hisat2(args, q, indir):
                                     os.path.join(cwd, bname+"/"+"metrics.txt"),
                                     os.path.join(cwd, bname+"/"+"align_summary.txt"),
                                     samtools_path,
+                                    secondary_alignments,
                                     samtools_path, samtools_threads, samtools_mem,
                                     os.path.join(cwd, bname+"/"+"accepted_hits"),
                                     )
@@ -1263,7 +1277,7 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view -F256 -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
@@ -1271,6 +1285,7 @@ def run_hisat2(args, q, indir):
                                     os.path.join(cwd, bname+"/"+"metrics.txt"),
                                     os.path.join(cwd, bname+"/"+"align_summary.txt"),
                                     samtools_path,
+                                    secondary_alignments,
                                     samtools_path, samtools_threads, samtools_mem,
                                     os.path.join(cwd, bname+"/"+"accepted_hits"),
                                     )
