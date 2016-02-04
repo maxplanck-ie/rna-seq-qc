@@ -114,7 +114,7 @@ if ( file.exists( indir ) ){
     counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
   }
-  df_counts = data.frame(names=names, Trim_Galore=counts)
+  df_counts = data.frame(names=names, TrimGalore=counts)
   
   report = merge(report, df_counts, by.x=c("row.names"), by.y=("names"))
   rownames(report) = report$Row.names
