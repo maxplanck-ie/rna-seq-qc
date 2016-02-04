@@ -2085,4 +2085,7 @@ if __name__ == "__main__":
     #print "Args:", sys.argv
     outdir = main()
     print "\n{} rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
-    print "Output stored in: {}\n".format(outdir)
+    if os.path.isdir(outdir):
+        print "Output stored in: {}\n".format(outdir)
+    if os.path.isfile(os.path.join(outdir,"project_report","Report.pdf")):
+        print "Project report:", os.path.join(outdir,"project_report","Report.pdf")
