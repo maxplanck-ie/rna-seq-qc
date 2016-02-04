@@ -106,15 +106,20 @@ if ( file.exists( indir ) ){
   files <- sort(list.files(indir, pattern="*.fastq.gz$", full.names=T))
   files
   names = c()
-  num_reads = c()
+  counts = c()
   for (file in unpair(files)) {
     name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
     names = c( names, name )
-    num = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
-    num_reads = c( num_reads, num )
+    count = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
+    counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
   }
-  report$TrimGalore = num_reads
+  df_counts = data.frame(names=names, Trim_Galore=counts)
+  
+  report = merge(report, df_counts, by.x=c("row.names"), by.y=("names"))
+  rownames(report) = report$Row.names
+  report$Row.names = NULL
+  
   report$TrimGalore_perc = apply(report, 1, function(x) x["TrimGalore"]/x["FASTQ"]*100)
   report
 } 
@@ -211,12 +216,12 @@ if ( file.exists( infile ) ) {
   counts = read.table(infile, header=TRUE)
   head(counts)
   
-  df_counts = data.frame( "htseq-count"=apply(counts, 2, sum) )
+  df_counts = data.frame( "htseq_count"=apply(counts, 2, sum) )
   report = merge(report, df_counts, by.x=c("row.names"), by.y=("row.names"))
   row.names(report) = report$Row.names
   report$Row.names = NULL
 
-  report$htseq-counts_perc = apply(report, 1, function(x) x["htseq-count"]/x["FASTQ"]*100)
+  report$htseq_counts_perc = apply(report, 1, function(x) x["htseq_count"]/x["FASTQ"]*100)
   report
 }
 
