@@ -1945,6 +1945,7 @@ def main():
         print "Transcriptome index (TopHat2):", args.transcriptome_index
         print "Mapping program:", args.mapping_prg
         print "HISAT2 index:", args.hisat_index
+        print "Report secondary alignments:", args.report_secondary_alignments
         print "Count program:", args.count_prg
         print "GTF:", args.gtf
         print "BED:", args.bed
