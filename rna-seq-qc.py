@@ -15,7 +15,7 @@ __description__ = """
     This software is distributed WITHOUT ANY WARRANTY!
     --------------------------------------------------
 
-    Following steps are executed in succession: FASTQ subsampling (optiona), quality check
+    Following steps are executed in succession: FASTQ subsampling (optional), quality check
     with FASTQC, trimming of reads with Trim Galore (optional), estimation of insert size
     and strand specificity with RSeQC, mapping with TopHat, extensive quality check with RSeQC,
     counting of features with featureCounts (default) or htseq-count, differential expression
