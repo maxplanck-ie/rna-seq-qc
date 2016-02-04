@@ -9,9 +9,9 @@ sessionInfo()
 args = commandArgs(TRUE)
 
 ## For debugging only!!! #######################################################
-# setwd("/data/processing/kilpert/test/rna-seq-qc/Katarzyna/outdir_full/project_report/")
+# setwd("/data/processing/kilpert/test/rna-seq-qc/Katarzyna/outdir_1M/project_report/")
 # args = c('/data/boehm/sikora/nusser/A387/reads',
-        # '/data/processing/kilpert/test/rna-seq-qc/Katarzyna/outdir_full')
+#         '/data/processing/kilpert/test/rna-seq-qc/Katarzyna/outdir_1M')
 ################################################################################
 
 main_indir = args[1]
@@ -66,10 +66,16 @@ is_paired = function(allfiles){
 
 
 ## FASTQ: total ################################################################
-indir = main_indir
+
+## If there is downsampling
+if ( dir.exists(file.path(main_outdir,"FASTQ_downsampling")) ) {
+  indir = file.path(main_outdir,"FASTQ_downsampling")
+} else {
+  indir = main_indir
+}
+  
 if (file.exists(indir)){
-  allfiles <- list.files(indir, pattern="*.fastq.gz$", full.names=T)
-  ##allfiles = allfiles[sort.list(allfiles)]
+  allfiles <- sort(list.files(indir, pattern="*.fastq.gz$", full.names=T))
   paired = is_paired(allfiles)
   
   num_reads = c()
@@ -97,8 +103,7 @@ report
 
 indir = file.path(main_outdir,"Trim_Galore")
 if ( file.exists( indir ) ){
-  files <- list.files(indir, pattern="*.fastq.gz$", full.names=T)
-  files = files[sort.list(files)]
+  files <- sort(list.files(indir, pattern="*.fastq.gz$", full.names=T))
   files
   names = c()
   num_reads = c()
@@ -119,51 +124,66 @@ if ( file.exists( indir ) ){
 ## HISAT2
 indir = file.path(main_outdir,"HISAT2")
 if ( file.exists( indir ) ){
-  files <- list.files(indir, pattern="*.bam$", full.names=T)
-  files = files[sort.list(files)]
+  files <- sort(list.files(indir, pattern="*.bam$", full.names=T))
+  ## files = sample(files) ## debugging only!!!
   files
-  num_reads = c()
+  counts = c()
+  names = c()
   
   for (file in files) {
     name = gsub(".bam$","",basename(file))
-    print(name)
+    names = c(names, name)
     
     if (paired==T) {
-      num = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      count = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
+      count = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
-    num_reads = c( num_reads, num )
+    counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
   }
-  report$HISAT2 = num_reads
+  df_counts = data.frame(names=names, HISAT2=counts)
+  
+  report = merge(report, df_counts, by.x=c("row.names"), by.y=("names"))
+  rownames(report) = report$Row.names
+  report$Row.names = NULL
+  
   report$HISAT2_perc = apply(report, 1, function(x) x["HISAT2"]/x["FASTQ"]*100)
   report
 }
 
+
 ## TopHat2
 indir = file.path(main_outdir,"TopHat2")
 if ( file.exists( indir ) ){
-  files <- list.files(indir, pattern="*.bam$", full.names=T)
-  files = files[sort.list(files)]
+  files <- sort(list.files(indir, pattern="*.bam$", full.names=T))
+  ## files = sample(files) ## debugging only!!!
   files
-  num_reads = c()
+  counts = c()
+  names = c()
   
   for (file in files) {
     name = gsub(".bam$","",basename(file))
+    names = c(names, name)
     
     if (paired==T) {
-      num = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
+      count = as.numeric( system(sprintf("%s view -c -f3 -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
     } else {
-      num = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
+      count = as.numeric( system(sprintf("%s view -c -F260 %s", file.path(samtools_dir,"samtools"), file), intern=T) )
     }
-    num_reads = c( num_reads, num )
+    counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
   }
-  report$TopHat2 = num_reads
-  report$TopHat2_perc  = apply(report, 1, function(x) x["TopHat2"]/x["FASTQ"]*100)
+  df_counts = data.frame(names=names, TopHat2=counts)
+  
+  report = merge(report, df_counts, by.x=c("row.names"), by.y=("names"))
+  rownames(report) = report$Row.names
+  report$Row.names = NULL
+  
+  report$TopHat2_perc = apply(report, 1, function(x) x["TopHat2"]/x["FASTQ"]*100)
   report
 }
+
 
 ## counts ######################################################################
 ##featureCounts
@@ -174,7 +194,7 @@ if ( file.exists( infile ) ) {
  counts = read.table(infile, header=TRUE)
  head(counts)
 
- df_counts = data.frame(featureCounts=apply(counts, 2, sum))
+ df_counts = data.frame("featureCounts"=apply(counts, 2, sum))
  report = merge(report, df_counts, by.x=c("row.names"), by.y=("row.names"))
  row.names(report) = report$Row.names
  report$Row.names = NULL
@@ -191,7 +211,7 @@ if ( file.exists( infile ) ) {
   counts = read.table(infile, header=TRUE)
   head(counts)
   
-  df_counts = data.frame(featureCounts=apply(counts, 2, sum))
+  df_counts = data.frame( "htseq-count"=apply(counts, 2, sum) )
   report = merge(report, df_counts, by.x=c("row.names"), by.y=("row.names"))
   row.names(report) = report$Row.names
   report$Row.names = NULL
