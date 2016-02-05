@@ -1159,7 +1159,7 @@ def run_tophat(args, q, indir):
         if args.report_secondary_alignments:
             report_secondary_alignments = "--report-secondary-alignments"   # secondary alignments
         else:
-            report_secondary_alignments = ""   # primary alignments
+            report_secondary_alignments = ""   # no secondary alignments (default)
 
         if args.paired:
             for pair in infiles:
@@ -1239,7 +1239,7 @@ def run_hisat2(args, q, indir):
         if args.report_secondary_alignments:
             report_secondary_alignments = ""         # all alignments
         else:
-            report_secondary_alignments = "-F256"    # primary alignments only
+            report_secondary_alignments = "-F256"    # primary alignments only (default)
 
         ## PE
         if args.paired:
