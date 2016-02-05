@@ -112,7 +112,7 @@ bowtie2_path = "/package/bowtie2-2.2.3/"; bowtie2_ver = "Bowtie2-2.2.3"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
 picardtools_path = "/package/picard-tools-1.121/"; picardtools_ver = "Picard-tools-1.1.21"
 tophat2_path = "/package/tophat-2.0.13.Linux_x86_64/"; tophat2_ver = "TopHat-2.0.13"
-feature_counts_path = "/package/subread-1.4.6-p2/bin/"; feature_counts_ver = "featureCounts (subread-1.4.6-p2)"
+feature_counts_path = "/package/subread-1.5.0-p1/bin/"; feature_counts_ver = "featureCounts (subread-1.5.0-p1)"
 htseq_count_path = "/package/HTSeq-0.6.1/bin/"; htseq_count_ver = "HTSeq-0.6.1"
 R_path = "/package/R-3.2.0/bin/"; R_ver = "R-3.2.0"
 samtools_path = "/package/samtools-1.2/"; samtools_ver = "Samtools-1.2"
