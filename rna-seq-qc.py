@@ -180,22 +180,22 @@ def parse_args():
     parser.add_argument("-i", "--input-dir", dest="main_indir", required=True, help="Input dir containing (FASTQ)")
     parser.add_argument("-o", "--output-dir", dest="main_outdir", required=True, help="Output directory")
     parser.add_argument("--overwrite", dest="overwrite", action = "store_true", default=False, help="Overwrite results in existing folders!")
-    parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: {})".format(default_parallel), type=int, default=default_parallel)
-    parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: {})".format(default_threads), type=int, default=default_threads)
+    parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: '%(default)s')", type=int, default=default_parallel)
+    parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: '%(default)s')", type=int, default=default_threads)
     parser.add_argument("--seed", dest="seed", metavar="INT", help="Random sampling seed", type=int, default=None)
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences (for testing only!)", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
-    parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '--stringency 2')", type=str, default="--stringency 2")
-    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string", type=str, default="")     #--library-type fr-firststrand
-    parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string (default: '--end-to-end --fast'); for parameter estimation step only (no direct effect on Tophat2 mapping!)", type=str, default="--end-to-end --fast")
-    parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '')", type=str, default="-Q 10")
-    parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string", type=str, default="--mode union")
-    parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard (default) or RSeQC", type=str, default="Picard")
-    parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts (default) or htseq-count", type=str, default="featureCounts")
-    parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: auto)", type=str, default="auto")
-    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 (default) or HISAT2", type=str, default="TopHat2")
-    parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '')", type=str, default="")
-    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 (default) for minimum selection or 2 for maximum output", type=int, default="1")
+    parser.add_argument("--trim_galore", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '%(default)s')", type=str, default="--stringency 2")
+    parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
+    parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string. For parameter estimation step only (NO direct effect on Tophat2 mapping!) (default: '%(default)s')", type=str, default="--end-to-end --fast")
+    parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
+    parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string (default: '%(default)s')", type=str, default="--mode union")
+    parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard or RSeQC (default: '%(default)s')", type=str, default="Picard")
+    parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
+    parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: '%(default)s')", type=str, default="auto")
+    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="TopHat2")
+    parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
+    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 for minimum selection or 2 for maximum output (default: '%(default)s')", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--report-secondary-alignments", dest="report_secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!!")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
@@ -1441,13 +1441,13 @@ def run_featureCounts(args, q, indir):
 
             #featureCounts -T 5 -t exon -g gene_id -a annotation.gtf -o counts.txt mapping_results_SE.sam
             if args.paired:
-                jobs = ["{}featureCounts {} -p -B -C -T {} -s {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, library_type, args.gtf, "{}.counts.txt".format(bname), infile)]
+                jobs = ["{}featureCounts {} -p -P -B -T {} -s {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, library_type, args.gtf, "{}.counts.txt".format(bname), infile)]
                 # -p : isPairedEnd
                 # -B : requireBothEndsMap
                 # -C : NOT countChimericFragments
                 # -t : feature type; default: -t exon
             else:
-                jobs = ["{}featureCounts {} -C -T {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, args.gtf, "{}.counts.txt".format(bname), infile)]
+                jobs = ["{}featureCounts {} -T {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, args.gtf, "{}.counts.txt".format(bname), infile)]
 
             #q.put(Qjob(jobs, logfile="LOG", shell=False))
             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=False, backcopy=True, keep_temp=False))
