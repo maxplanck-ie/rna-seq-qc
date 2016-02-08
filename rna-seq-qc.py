@@ -1441,7 +1441,7 @@ def run_featureCounts(args, q, indir):
 
             #featureCounts -T 5 -t exon -g gene_id -a annotation.gtf -o counts.txt mapping_results_SE.sam
             if args.paired:
-                jobs = ["{}featureCounts {} -p -P -B -T {} -s {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, library_type, args.gtf, "{}.counts.txt".format(bname), infile)]
+                jobs = ["{}featureCounts {} -p -B -T {} -s {} -a {} -o {} {}".format(feature_counts_path, args.featureCounts_opts, args.threads, library_type, args.gtf, "{}.counts.txt".format(bname), infile)]
                 # -p : isPairedEnd
                 # -B : requireBothEndsMap
                 # -C : NOT countChimericFragments
