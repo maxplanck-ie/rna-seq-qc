@@ -197,7 +197,7 @@ def parse_args():
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 for minimum selection or 2 for maximum output (default: '%(default)s')", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
-    parser.add_argument("--report-secondary-alignments", dest="report_secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!!")
+    parser.add_argument("--report-secondary-alignments", dest="report_secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!! WARNING: Caution using TopHat2 BAM files in downstream analysis, as the MAPQ scores are always set to 0 for multi-mapping reads!!!")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
     parser.add_argument("--rseqc", dest="rseqc", action="store_true", default=False, help="Run RSeQC")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
