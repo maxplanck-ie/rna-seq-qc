@@ -36,7 +36,7 @@ __description__ = """
     single end and paired end sequences alike.
 
     The DE analysis is only executed if a valid setup table is provided (e.g.
-    --DE setup_table.tsv), which defines the relationships of the samples.
+    --DE sampleInfo.tsv), which defines the relationships of the samples.
 
     More information on the pipeline can be found on the wiki page:
     http://epicenter/wiki/index.php/RNA-seq_pipeline_(rna-seq-pc.py)
@@ -195,11 +195,11 @@ def parse_args():
     parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: '%(default)s')", type=str, default="auto")
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="TopHat2")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
-    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 for minimum selection or 2 for maximum output (default: '%(default)s')", type=int, default="1")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose output")
     parser.add_argument("--report-secondary-alignments", dest="report_secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!! WARNING: Caution using TopHat2 BAM files in downstream analysis, as the MAPQ scores are always set to 0 for multi-mapping reads!!!")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
     parser.add_argument("--rseqc", dest="rseqc", action="store_true", default=False, help="Run RSeQC")
+    parser.add_argument("--rseqc-preselection", dest="rseqc_preselection", help="Preselection of RSeQC programs; 1 for minimum selection or 2 for maximum output (default: '%(default)s')", type=int, default="1")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     # parser.add_argument("--no-trim", dest="no_trim", action="store_true", default=False, help="Do not trim FASTQ reads. Default: Use Trim Galore! with default settings.")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
