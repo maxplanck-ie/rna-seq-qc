@@ -186,7 +186,7 @@ def parse_args():
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Subsample first n fastq sequences (for testing only!)", type=int, default=None)
     parser.add_argument("-g", "--genome", dest="genome", required=True, help="Reference genome build")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
-    parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '%(default)s')", type=str, default="--stringency 2")
+    parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string. The option '--paired' is always used for paired-end data. (default: '%(default)s')", type=str, default="--stringency 2")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string. For parameter estimation step only (NO direct effect on Tophat2 mapping!) (default: '%(default)s')", type=str, default="--end-to-end --fast")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
