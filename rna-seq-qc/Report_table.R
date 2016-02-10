@@ -140,7 +140,7 @@ if ( file.exists( indir ) ){
     names = c(names, name)
 
     ## count mapped (-F4) and primary (-F256) fragments
-    count = as.numeric( system(sprintf("%s view -F260 %s | cut -f1 | sort -u | wc -l", file.path(samtools_dir,"samtools"), file), intern=T) )
+    count = as.numeric( system(sprintf("%s view -c -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
 
     counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
@@ -170,7 +170,7 @@ if ( file.exists( indir ) ){
     names = c(names, name)
     
     ## count mapped (-F4) and primary (-F256) fragments
-    count = as.numeric( system(sprintf("%s view -F260 %s | cut -f1 | sort -u | wc -l", file.path(samtools_dir,"samtools"), file), intern=T) )
+    count = as.numeric( system(sprintf("%s view -c -F260 %s | awk '{print $1/2}'", file.path(samtools_dir,"samtools"), file), intern=T) )
 
     counts = c( counts, count )
     cat(paste(name, num, "\n"), sep=" ")
