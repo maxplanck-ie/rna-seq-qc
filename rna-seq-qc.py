@@ -189,7 +189,7 @@ def parse_args():
     parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string (default: '%(default)s')", type=str, default="--stringency 2")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string. For parameter estimation step only (NO direct effect on Tophat2 mapping!) (default: '%(default)s')", type=str, default="--end-to-end --fast")
-    parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
+    parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string (default: '%(default)s')", type=str, default="--mode union")
     parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard or RSeQC (default: '%(default)s')", type=str, default="Picard")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
