@@ -187,6 +187,7 @@ def parse_args():
     parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: '%(default)s')", type=int, default=default_threads)
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Use first n sequences in fastq only (for TESTING!!!)", type=int, default=None)
     parser.add_argument("--seed", dest="seed", metavar="INT", help="Random sampling seed", type=int, default=None)
+    parser.add_argument("--no-fastqc", dest="no_fastqc", action="store_true", default=False, help="Deactivate FastQC")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
     parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string. The option '--paired' is always used for paired-end data. (default: '%(default)s')", type=str, default="--stringency 2")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
@@ -1984,11 +1985,12 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    ## Run FastQC
-    t1 = datetime.datetime.now()
-    run_fastqc(args, q, indir)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
+    if not args.no_fastqc:
+        ## Run FastQC
+        t1 = datetime.datetime.now()
+        run_fastqc(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
 
     ## Run Trim Galore!
     if args.trim:
@@ -1998,7 +2000,7 @@ def main():
         print "Duration:", t2-t1
 
     ## Run FastQC on trimmed reads
-    if args.trim:
+    if args.trim and not args.no_fastqc:
         ## Run FastQC
         t1 = datetime.datetime.now()
         run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
