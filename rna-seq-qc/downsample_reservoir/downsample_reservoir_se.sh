@@ -5,4 +5,4 @@
 
 bindir=$(dirname $0)
 
-zcat ${2} | sed '/^$/d' | paste -d "\t" - - - - | $bindir/reservoir ${1} | sed 's/\t/\n/g' | gzip > ${3}
+zcat ${2} | sed '/^$/d' | sed 's/\t/ /' | paste -d "\t" - - - - | $bindir/reservoir ${1} | sed 's/\t/\n/g' | gzip > ${3}
