@@ -5,7 +5,7 @@
 
 bindir=$(dirname $0)
 
-DIFF=$(diff <(pigz -dc ${2} | sed -n '1p;1~4p' | cut -d " " -f1) <(pigz -dc ${3} | sed -n '1p;1~4p' | cut -d " " -f1))
+DIFF=$(diff <(pigz -dc ${2} | sed -n '1p;1~4p' | sed 's/\t/ /g' | cut -d " " -f1) <(pigz -dc ${3} | sed -n '1p;1~4p' | cut -d " " -f1))
 if [ "$DIFF" != "" ] 
 then
     echo "Error! FASTQ sequence identifiers do NOT match!"
@@ -14,4 +14,12 @@ else
     paste <(pigz -dc ${2} | sed '/^$/d' | sed 's/\t/ /g' | paste -d "\t" - - - - ) <(pigz -dc ${3} | sed '/^$/d' | sed 's/\t/ /g' | paste -d "\t" - - - - ) \
     | $bindir/reservoir ${1} \
     | tee >(cut -f1,2,3,4 | sed 's/\t/\n/g' | pigz -9 > ${4}) >(cut -f5,6,7,8 | sed 's/\t/\n/g' | pigz -9 > ${5}) >/dev/null
+fi
+
+## 2nd check
+DIFF=$(diff <(pigz -dc ${4} | sed -n '1p;1~4p' | cut -d " " -f1) <(pigz -dc ${5} | sed -n '1p;1~4p' | cut -d " " -f1))
+if [ "$DIFF" != "" ]
+then
+    echo "Error! FASTQ sequence identifiers do NOT match AFTER DOWNSAMPLING!"
+    exit 1
 fi
