@@ -321,34 +321,49 @@ def check_for_paired_infiles(args, indir, ext, verbose=False):
     """
     infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(ext)])
 
-    paired_infiles = OrderedDict()
-    for infile in infiles:
-        fname = os.path.basename(infile).replace(ext, "")
-        m = re.match("^(.+)_R*[1|2]$", fname)
-        if m:
-            bname = m.group(1)
-            if bname not in paired_infiles:
-                paired_infiles[bname] = [infile]
-            else:
-                paired_infiles[bname].append(infile)
-    if paired_infiles:
-        for pair in paired_infiles.values():
-            if len(pair) != 2:
-                print "Error! Unpaired input file:", pair
-                exit(1)
-        infiles = paired_infiles.values()
+    bnames = sorted( set( map(lambda x: re.sub("_1.fastq.gz$|_2.fastq.gz$|_R1.fastq.gz$|_R2.fastq.gz$","", os.path.basename(x)), infiles) ) )
 
-    ## Paired
-    if len(infiles[0]) == 2:
+    ## single-end
+    if len(infiles) == len(bnames):
+        args.paired = False
+
+    ## paired-end
+    elif len(infiles) == 2 * len(bnames):
         args.paired = True
-        print "Paired end FASTQ files ({} pairs)".format(len(infiles))
+
+        unpaired = []
+        paired_infiles = []
+
+        for b in bnames:
+
+            if os.path.isfile( os.path.join(indir, b+"_1.fastq.gz" )) and os.path.isfile( os.path.join(indir, b+"_2.fastq.gz" )):
+                paired_infiles.append( [ os.path.join(indir, b+"_1.fastq.gz"), os.path.join(indir, b+"_2.fastq.gz") ] )
+
+            if os.path.isfile( os.path.join(indir, b+"_R1.fastq.gz" )) and os.path.isfile( os.path.join(indir, b+"_R2.fastq.gz" )):
+                paired_infiles.append( [ os.path.join(indir, b+"_R1.fastq.gz"), os.path.join(indir, b+"_R2.fastq.gz") ] )
+
+            else:
+                unpaired.append(b)
+
+        if unpaired:
+            print "Check input files starting with:"
+            for u in unpaired:
+                print os.path.join(indir, u+"...")
+            exit(1)
+
+        infiles = paired_infiles
+
+    else:
+        print "Error! The inputs is a mixture of single-end and paired-end files!"
+        exit(1)
+
+    if args.paired:
+        print "Paired-end FASTQ files ({} pairs)".format(len(infiles))
         if verbose:
             for pair in infiles:
                 print "  {}  {}".format(os.path.basename(pair[0]), os.path.basename(pair[1]))
     else:
-    ## Single
-        args.paired = False
-        print "Single end FASTQ files ({})".format(len(infiles))
+        print "Single-end FASTQ files ({})".format(len(infiles))
         if verbose:
             for infile in infiles:
                 print "  {}".format(os.path.basename(infile))
@@ -1969,7 +1984,7 @@ def main():
     args.analysis_counter = 0   # Counter for analyzes conducted
     indir = args.indir
 
-    check_for_paired_infiles(args, indir, ".fastq.gz")      # sets the args.paired to True if sequences are paired end
+    check_for_paired_infiles(args, indir, ".fastq.gz", verbose=True)      # sets the args.paired to True if sequences are paired end
 
     q = Queue()
     for i in range(args.parallel):
