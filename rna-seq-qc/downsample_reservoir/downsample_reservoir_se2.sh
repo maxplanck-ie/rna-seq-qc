@@ -5,4 +5,4 @@
 
 bindir=$(dirname $0)
 
-pigz -dc ${2} | sed '/^$/d' | sed 's/\t/ /' | paste -d "\t" - - - - | $bindir/reservoir ${1} | sed 's/\t/\n/g' | pigz -9 > ${3}
+pigz -dc ${2} | sed '/^$/d' | sed 's/\t/ /g' | paste -d "\t" - - - - | $bindir/reservoir ${1} | sed 's/\t/\n/g' | pigz -9 > ${3}

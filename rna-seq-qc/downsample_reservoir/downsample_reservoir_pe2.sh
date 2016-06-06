@@ -11,7 +11,7 @@ then
     echo "Error! FASTQ sequence identifiers do NOT match!"
     exit 1
 else
-    paste <(pigz -dc ${2} | sed '/^$/d' | sed 's/\t/ /' | paste -d "\t" - - - - ) <(pigz -dc ${3} | sed '/^$/d' | sed 's/\t/ /' | paste -d "\t" - - - - ) \
+    paste <(pigz -dc ${2} | sed '/^$/d' | sed 's/\t/ /g' | paste -d "\t" - - - - ) <(pigz -dc ${3} | sed '/^$/d' | sed 's/\t/ /g' | paste -d "\t" - - - - ) \
     | $bindir/reservoir ${1} \
     | tee >(cut -f1,2,3,4 | sed 's/\t/\n/g' | pigz -9 > ${4}) >(cut -f5,6,7,8 | sed 's/\t/\n/g' | pigz -9 > ${5}) >/dev/null
 fi
