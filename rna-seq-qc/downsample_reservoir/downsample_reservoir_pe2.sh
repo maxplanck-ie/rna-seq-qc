@@ -16,10 +16,10 @@ else
     | tee >(cut -f1,2,3,4 | sed 's/\t/\n/g' | pigz -9 > ${4}) >(cut -f5,6,7,8 | sed 's/\t/\n/g' | pigz -9 > ${5}) >/dev/null
 fi
 
-## 2nd check
-DIFF=$(diff <(pigz -dc ${4} | sed -n '1p;1~4p' | cut -d " " -f1) <(pigz -dc ${5} | sed -n '1p;1~4p' | cut -d " " -f1))
-if [ "$DIFF" != "" ]
-then
-    echo "Error! FASTQ sequence identifiers do NOT match AFTER DOWNSAMPLING!"
-    exit 1
-fi
+### 2nd check
+#DIFF=$(diff <(pigz -dc ${4} | sed -n '1p;1~4p' | cut -d " " -f1) <(pigz -dc ${5} | sed -n '1p;1~4p' | cut -d " " -f1))
+#if [ "$DIFF" != "" ]
+#then
+#    echo "Error! FASTQ sequence identifiers do NOT match AFTER DOWNSAMPLING!"
+#    exit 1
+#fi
