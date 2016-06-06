@@ -83,7 +83,7 @@ if (file.exists(indir)){
   names = c()
   
   for (file in unpair(allfiles)) {
-    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$|.fastq.gz$","",basename(file))
     names = c(names, name)
     num = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
     num_reads = c( num_reads, num )  
@@ -108,7 +108,7 @@ if ( file.exists( indir ) ){
   names = c()
   counts = c()
   for (file in unpair(files)) {
-    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$","",basename(file))
+    name = gsub("_R1.fastq.gz$|_R2.fastq.gz$|.fastq.gz$","",basename(file))
     names = c( names, name )
     count = as.numeric( system(sprintf("zcat %s | wc -l | awk '{print $1/4}'", file), intern=T) )
     counts = c( counts, count )
