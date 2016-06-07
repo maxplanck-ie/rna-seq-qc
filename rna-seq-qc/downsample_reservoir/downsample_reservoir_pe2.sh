@@ -5,8 +5,8 @@
 
 bindir=$(dirname $0)
 
-DIFF=$(diff <(pigz -dc ${2} | sed -n '1p;1~4p' | sed 's/\t/ /g' | cut -d " " -f1) <(pigz -dc ${3} | sed -n '1p;1~4p' | cut -d " " -f1))
-if [ "$DIFF" != "" ] 
+DIFF=$(diff <(pigz -dc ${2} | sed -n '1p;1~4p' | sed 's/\t/ /g' | cut -d " " -f1) <(pigz -dc ${3} | sed -n '1p;1~4p' | sed 's/\t/ /g' | cut -d " " -f1))
+if [ "$DIFF" != "" ]
 then
     echo "Error! FASTQ sequence identifiers do NOT match!"
     exit 1
