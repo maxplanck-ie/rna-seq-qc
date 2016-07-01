@@ -4,24 +4,23 @@
 .Library.site
 .libPaths()
 
-library("DESeq2")
-library("gplots")
-library("ggplot2")
-library("RColorBrewer")
+require("DESeq2")
+require("gplots")
+require("ggplot2")
+require("RColorBrewer")
 
 sessionInfo()
 
 args = commandArgs(TRUE)
 print(args)
  
-# ## For debugging only!!! #######################################################
-# setwd("/data/manke/kilpert/Nicola/A277_TRR_KD/07_introns/Comparison1_TRR_KD_vs_WT/DESeq2/")
-# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison2_fertilized_vs_unfertilized/setup_table.tsv',
-#          '/data/manke/kilpert/Nicola/A277_TRR_KD/07_introns/Comparison2_fertilized_vs_unfertilized/counts.tsv',
+## For debugging only!!! #######################################################
+# setwd("/data/processing/kilpert/test/rna-seq-qc/Iovino")
+# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
+#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
 #          '0.05',
 #          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
-
-# ################################################################################
+################################################################################
 
 plotVolcano <- function(res_obj, data=plot) {
   # Volcano plot
@@ -163,6 +162,22 @@ info
 # save normalized counts to file
 write.table(counts(dds, normalized=T),"DESeq2.counts_normalized.tsv", sep="\t", quote=FALSE, col.names=NA)
 
+
+## Expression density plot
+toplot = data.frame(counts(dds, normalized=T))
+toplot = stack(toplot, select=colnames(toplot))
+p = ggplot( toplot, aes(values, colour=ind, alpha=0.5))
+p + geom_line(aes(color=ind), stat="density", alpha=0.5) +
+scale_x_log10(name="normalized counts", breaks=c(0.1,1,10,100,1000,10000,100000), limits=c(0.1,100000) ) +
+  scale_colour_discrete(name="Samples") +
+  geom_vline(xintercept=10, colour="grey", linetype = "dashed") +
+  theme_minimal() +
+  ggtitle("Density plot") +
+  theme()
+  #theme(legend.position="none")
+ggsave(file=sprintf("Fig8.Density_plot.sample_read_counts.pdf"), width=7, height=6)
+
+
 # ## size factors plot
 # plotdata = data.frame(name=colnames(dds), size_factor=sizeFactors(dds))
 # plotdata
@@ -181,8 +196,8 @@ plotDispEsts(dds, main="Dispersion plot")
 dev.off()
 
 ## get results
-res = results(dds)
-head(res)
+res = results(dds, alpha=fdr)
+str(res)
 summary(res)
 dim(res)
 
@@ -279,18 +294,44 @@ hist(res$padj, breaks=20, col="grey", main="Histogram of adjusted p-values", xla
 abline(v=fdr, col="red", lwd=1)
 dev.off()
 
-# # ## Independent filtering
+## Independent filtering
+
+## This value is the mean count threshold used for independent filtering
+ind_filt_mean_count_thres = as.numeric(metadata(res)$filterThreshold)
+
+## Expression density plot
+toplot = data.frame(gene_names_df(res)$baseMean)
+colnames(toplot) = c("baseMean")
+head(toplot)
+p = ggplot(toplot, aes(baseMean))
+p + geom_line(aes(color=baseMean), stat="density", alpha=0.5, colour="blue", size=1.1) +
+  scale_x_log10(name="mean counts", breaks=c(0.01,0.1,1,10,100,1000,10000,100000), limits=c(0.01,100000) ) +
+  scale_colour_discrete(name="Samples") +
+  geom_vline(xintercept=ind_filt_mean_count_thres, colour="red", size=1.1) +
+  theme_minimal() +
+  ggtitle(sprintf("Density plot\n(independent filtering: %.3f)", ind_filt_mean_count_thres)) +
+  theme() +
+  theme(legend.position="none")
+ggsave(file=sprintf("Fig9.Density_plot.mean_read_counts.pdf"), width=7, height=6)
+
+
 # attr(res,"filterThreshold")
 # plot(attr(res,"filterNumRej"), type="b",
 #      ylab="number of rejections",
 #      xlab="quantiles of mean of normalized counts")
-#  
+
 # plot(res$baseMean+1, -log10(res$padj),
-#      log="x", 
+#      log="x",
 #      xlab="mean of normalized counts",
 #      ylab="-log10 padj",
 #      cex=.4, col=rgb(0,0,0,.3))
 # abline(h=-log10(fdr), col="red", lwd=1)
+# 
+# plot(metadata(res)$filterNumRej,
+#      type="b", ylab="number of rejections",
+#      xlab="quantiles of filter")
+# lines(metadata(res)$lo.fit, col="red")
+# abline(v=metadata(res)$filterTheta)
 
 ################################################################################
 ## rlog transform; for clustering and ordination (e.g PCA)
@@ -322,8 +363,8 @@ par(cex.main=1)
 heatmap.2(sampleDistMatrix,trace="none",col=colours,
           main="Heatmap\n(Euclidean distances)",
           keysize=1.2,
-          notecex=1.2,
-          cexRow=1.2, cexCol=1.2, margins=c(10,10),
+          notecex=1.1,
+          cexRow=1.0, cexCol=1.0, margins=c(10,10),
           cellnote=round(sampleDistMatrix,1),
           notecol="black")
 dev.off()
@@ -331,14 +372,15 @@ dev.off()
 ## PCA
 data <- plotPCA(rld, intgroup=c("name", "condition"), returnData=TRUE)
 percentVar = round(100 * attr(data, "percentVar"))
-ggplot(data, aes(PC1, PC2, color=name, shape=condition)) +
+ggplot(data, aes(PC1, PC2, color=condition, shape=name)) +
   geom_hline(aes(yintercept=0), colour="grey") +
-  geom_vline(aes(vintercept=0), colour="grey") +
+  geom_vline(aes(xintercept=0), colour="grey") +
   geom_point(size=5) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   theme_bw(base_size = 14) +
-  ggtitle("PCA\n")
+  ggtitle("PCA\n") +
+  scale_shape_manual(values=c(0:18,33:17))
 ggsave(file=sprintf("Fig6.PCA.pdf"), width=7, height=6)
 
 ##pdf("PCA.pdf")
