@@ -15,11 +15,11 @@ args = commandArgs(TRUE)
 print(args)
  
 ## For debugging only!!! #######################################################
-# setwd("/data/processing/kilpert/test/rna-seq-qc/Iovino")
-# args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
-#          '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
-#          '0.05',
-#          '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
+setwd("/data/processing/kilpert/test/rna-seq-qc/Iovino")
+args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
+         '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
+         '0.05',
+         '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
 ################################################################################
 
 plotVolcano <- function(res_obj, data=plot) {
@@ -168,13 +168,13 @@ toplot = data.frame(counts(dds, normalized=T))
 toplot = stack(toplot, select=colnames(toplot))
 p = ggplot( toplot, aes(values, colour=ind, alpha=0.5))
 p + geom_line(aes(color=ind), stat="density", alpha=0.5) +
-scale_x_log10(name="normalized counts", breaks=c(0.1,1,10,100,1000,10000,100000), limits=c(0.1,100000) ) +
+  scale_x_log10(name="\nnormalized counts", breaks=c(0.1,1,10,100,1000,10000,100000), limits=c(0.1,100000) ) +
+  scale_y_continuous(name="density\n") +
   scale_colour_discrete(name="Samples") +
   geom_vline(xintercept=10, colour="grey", linetype = "dashed") +
   theme_minimal() +
-  ggtitle("Density plot") +
+  ggtitle("Density plot\n") +
   theme()
-  #theme(legend.position="none")
 ggsave(file=sprintf("Fig8.Density_plot.sample_read_counts.pdf"), width=7, height=6)
 
 
@@ -305,11 +305,12 @@ colnames(toplot) = c("baseMean")
 head(toplot)
 p = ggplot(toplot, aes(baseMean))
 p + geom_line(aes(color=baseMean), stat="density", alpha=0.5, colour="blue", size=1.1) +
-  scale_x_log10(name="mean counts", breaks=c(0.01,0.1,1,10,100,1000,10000,100000), limits=c(0.01,100000) ) +
+  scale_x_log10(name="\nmean counts", breaks=c(0.01,0.1,1,10,100,1000,10000,100000), limits=c(0.01,100000) ) +
+  scale_y_continuous(name="density\n") +
   scale_colour_discrete(name="Samples") +
   geom_vline(xintercept=ind_filt_mean_count_thres, colour="red", size=1.1) +
   theme_minimal() +
-  ggtitle(sprintf("Density plot\n(independent filtering: %.3f)", ind_filt_mean_count_thres)) +
+  ggtitle(sprintf("Density plot\n(independent filtering: %.3f)\n", ind_filt_mean_count_thres)) +
   theme() +
   theme(legend.position="none")
 ggsave(file=sprintf("Fig9.Density_plot.mean_read_counts.pdf"), width=7, height=6)
