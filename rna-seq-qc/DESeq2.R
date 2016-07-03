@@ -15,16 +15,16 @@ args = commandArgs(TRUE)
 print(args)
  
 ## For debugging only!!! #######################################################
-setwd("/data/processing/kilpert/test/rna-seq-qc/Iovino")
-args = c('/data/manke/kilpert/Nicola/A277_TRR_KD/00_data/Comparison1_TRR_KD_vs_WT/setup_table.tsv',
-         '/data/manke/kilpert/Nicola/A277_TRR_KD/01_rna-seq-qc/Comparison1_TRR_KD_vs_WT/featureCounts/counts.txt',
-         '0.05',
-         '/home/kilpert/git/rna-seq-qc/rna-seq-qc/dm6.gene_names')
+## setwd("output_dir")
+## args = c('setup_table.tsv',
+##          'counts.txt',
+##          '0.05',
+##          'species.gene_names')
 ################################################################################
 
 plotVolcano <- function(res_obj, data=plot) {
   # Volcano plot
-  xlim = c(-3,3)
+  xlim = c(-4,4)
   ylim = c(0,20)
   cex=c(0.3,0.5)
   plotdata = data.frame(log2FoldChange=res_obj$log2FoldChange, padj=res_obj$padj )
@@ -77,6 +77,7 @@ sampleInfoFilePath = args[1]
 countFilePath = args[2]
 geneNamesFilePath = args[4]   # BioMart file with ensembl and symbol names
 
+cat(paste("Working dir:", getwd(), "\n"))
 cat(paste("Sample info CSV:", sampleInfoFilePath, "\n"))
 cat(paste("Count file:", countFilePath, "\n"))
 cat(paste("FDR:", fdr, "\n"))
@@ -273,7 +274,7 @@ write.table(info,"DESeq2.stats.tsv", sep="\t", quote=FALSE, col.names=NA)
 # MA and volcano plot
 pdf("Fig2.MA_plot.pdf", width=6, height=6)
 par(mfrow=c(1,1))
-plotMA(res, alpha=fdr, ylim=c(-3,3),
+plotMA(res, alpha=fdr, ylim=c(-4,4),
        main=sprintf("MA-plot\n(FDR: %.2f, up: %d, down: %d)",fdr,length(de_up[,1]),length(de_down[,1])),
        ylab="log2 fold change")
 dev.off()
@@ -298,6 +299,7 @@ dev.off()
 
 ## This value is the mean count threshold used for independent filtering
 ind_filt_mean_count_thres = as.numeric(metadata(res)$filterThreshold)
+print(ind_filt_mean_count_thres)
 
 ## Expression density plot
 toplot = data.frame(gene_names_df(res)$baseMean)
