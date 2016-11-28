@@ -1,8 +1,12 @@
+#!/usr/bin/env bash
+
 infile="$1"
 outdir="$2"
 deeptools_dir="$3"
 samtools="$4/samtools"
 threads="$5"
+
+bamCoverage_opts = "--normalizeUsingRPKM"
 
 ## Defaults (may be overwritten by command line arguments!)
 [ -n "$3" ] || deeptools_dir="/package/deeptools-2.0.0/bin/"
@@ -36,7 +40,7 @@ bname=$(basename ${infile%.bam})
 ## Both strands
 run "[ -f $outdir/${bname}.bothstrands.bam ] || $samtools view -b -f 1 $infile > $outdir/${bname}.bothstrands.bam"
 run "[ -f $outdir/${bname}.bothstrands.bam.bai ] || $samtools index $outdir/${bname}.bothstrands.bam"
-run "[ -f $outdir/${bname}.bw ] || $deeptools_dir/bamCoverage -b $outdir/${bname}.bothstrands.bam $opts -o $outdir/${bname}.bw"
+run "[ -f $outdir/${bname}.bw ] || $deeptools_dir/bamCoverage $bamCoverage_opts -b $outdir/${bname}.bothstrands.bam $opts -o $outdir/${bname}.bw"
 ##total=$($samtools view -c -F256 ${bname}.bothstrands.bam | awk '{print $1 / 2}')
 ##echo "Total: $total"
 
@@ -50,7 +54,7 @@ run "[ -f $outdir/${bname}.fwd.bam.bai ] || $samtools index $outdir/${bname}.fwd
 ##scaleFactor=$(echo $numreads $total | awk '{print $1 / $2}')
 ##echo "scaleFactor: $scaleFactor"
 ##run "rm $outdir/fwd1.bam $outdir/fwd2.bam"
-run "[ -f $outdir/${bname}.fwd.bw ] || $deeptools_dir/bamCoverage -b $outdir/${bname}.fwd.bam $opts -o $outdir/${bname}.fwd.bw"
+run "[ -f $outdir/${bname}.fwd.bw ] || $deeptools_dir/bamCoverage $bamCoverage_opts -b $outdir/${bname}.fwd.bam $opts -o $outdir/${bname}.fwd.bw"
 
 ## Reverse strand
 run "[ -f $outdir/${bname}.rev1.bam ] || $samtools view -b -f 144 $outdir/${bname}.bothstrands.bam > $outdir/${bname}.rev1.bam"
@@ -62,6 +66,6 @@ run "[ -f $outdir/${bname}.rev.bam.bai ] || $samtools index $outdir/${bname}.rev
 ##scaleFactor=$(echo $numreads $total | awk '{print $1 / $2}')
 ##echo "scaleFactor: $scaleFactor"
 ##run "rm $outdir/rev1.bam $outdir/rev2.bam"
-run "[ -f $outdir/${bname}.rev.bw ] || $deeptools_dir/bamCoverage -b $outdir/${bname}.rev.bam $opts -o $outdir/${bname}.rev.bw"
+run "[ -f $outdir/${bname}.rev.bw ] || $deeptools_dir/bamCoverage $bamCoverage_opts -b $outdir/${bname}.rev.bam $opts -o $outdir/${bname}.rev.bw"
 
 run "rm $outdir/${bname}.*.bam*"
