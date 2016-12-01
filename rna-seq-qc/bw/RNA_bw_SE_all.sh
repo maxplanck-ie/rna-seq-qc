@@ -6,7 +6,7 @@ deeptools_dir="$3"
 samtools="$4/samtools"
 threads="$5"
 
-bamCoverage_opts = "--normalizeUsingRPKM"
+bamCoverage_opts="--normalizeUsingRPKM"
 
 ## Defaults (may be overwritten by command line arguments!)
 [ -n "$3" ] || deeptools_dir="/package/deeptools-2.0.0/bin/"
@@ -53,7 +53,7 @@ run "[ -f $outdir/${bname}.fwd.bam.bai ] || $samtools index $outdir/${bname}.fwd
 ##echo "scaleFactor: $scaleFactor"
 ##run "rm $outdir/fwd1.bam $outdir/fwd2.bam"
 run "[ -f $outdir/${bname}.fwd.bw ] || $deeptools_dir/bamCoverage $bamCoverage_opts -b $outdir/${bname}.fwd.bam $opts -o $outdir/${bname}.fwd.bw"
-    
+
 ## Reverse strand
 run "[ -f $outdir/${bname}.rev1.bam ] || $samtools view -b -f 16 $outdir/${bname}.bothstrands.bam > $outdir/${bname}.rev.bam"
 run "[ -f $outdir/${bname}.rev.bam.bai ] || $samtools index $outdir/${bname}.rev.bam"
@@ -63,5 +63,5 @@ run "[ -f $outdir/${bname}.rev.bam.bai ] || $samtools index $outdir/${bname}.rev
 ##echo "scaleFactor: $scaleFactor"
 ##run "rm $outdir/rev1.bam $outdir/rev2.bam"
 run "[ -f $outdir/${bname}.rev.bw ] || $deeptools_dir/bamCoverage $bamCoverage_opts -b $outdir/${bname}.rev.bam $opts -o $outdir/${bname}.rev.bw"
-   
+
 run "rm $outdir/${bname}.*.bam*"

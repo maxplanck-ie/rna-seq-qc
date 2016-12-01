@@ -6,7 +6,7 @@ deeptools_dir="$3"
 samtools="$4/samtools"
 threads="$5"
 
-bamCoverage_opts = "--normalizeUsingRPKM"
+bamCoverage_opts="--normalizeUsingRPKM"
 
 ## Defaults (may be overwritten by command line arguments!)
 [ -n "$3" ] || deeptools_dir="/package/deeptools-2.0.0/bin/"
@@ -20,7 +20,7 @@ opts="-p $threads --binSize 25"
 
 ###############################################################################
 
-## Run 
+## Run
 function run {
     echo -e "\n$1\n" 2>&1 | tee -a $outdir/LOG
     eval $1 2>&1 | tee -a $outdir/LOG
