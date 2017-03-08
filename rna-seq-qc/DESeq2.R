@@ -84,7 +84,7 @@ cat(paste("FDR:", fdr, "\n"))
 cat(paste("Gene names:", geneNamesFilePath, "\n"))
 cat(paste("Number of top N genes:", topN, "\n"))
 
-## sampleInfo (setupt of the experiment)
+## sampleInfo (setup of the experiment)
 sampleInfo = read.table(sampleInfoFilePath, header=TRUE, stringsAsFactor=F)
 ## add X at the beginning of rows beginning with a number (makes it consistent to column names of of the count matrix!)
 if ( any(grepl("^[0-9]", sampleInfo$name)) ) {
