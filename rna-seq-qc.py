@@ -1860,80 +1860,82 @@ def run_project_report(args, q):
         cwd = os.getcwd()
         logfile = os.path.join(cwd, "LOG")
 
-        args.version = __version__
-        args.fastqc_ver = fastqc_ver
-        args.trim_galore_ver = trim_galore_ver
-        args.cutadapt_ver = cutadapt_ver
-        args.rseqc_ver = rseqc_ver
-        args.bowtie2_ver = bowtie2_ver
-        args.picardtools_ver = picardtools_ver
-        args.tophat2_ver = tophat2_ver
-        args.feature_counts_ver = feature_counts_ver
-        args.R_ver = R_ver
-        args.samtools_ver = samtools_ver
-        args.hisat_ver = hisat_ver
-        args.deseq2_ver = deseq2_ver
-        args.report_dir = cwd
-        if args.paired:
-            args.seq_type = "paired-end"
-        else:
-            args.seq_type = "single-end"
+        # args.version = __version__
+        # args.fastqc_ver = fastqc_ver
+        # args.trim_galore_ver = trim_galore_ver
+        # args.cutadapt_ver = cutadapt_ver
+        # args.rseqc_ver = rseqc_ver
+        # args.bowtie2_ver = bowtie2_ver
+        # args.picardtools_ver = picardtools_ver
+        # args.tophat2_ver = tophat2_ver
+        # args.feature_counts_ver = feature_counts_ver
+        # args.R_ver = R_ver
+        # args.samtools_ver = samtools_ver
+        # args.hisat_ver = hisat_ver
+        # args.deseq2_ver = deseq2_ver
+        # args.report_dir = cwd
+        # if args.paired:
+        #     args.seq_type = "paired-end"
+        # else:
+        #     args.seq_type = "single-end"
+        #
+        # lines = []
+        # for arg in dir(args):
+        #     if not arg.startswith("_"):
+        #         if getattr(args, arg):
+        #             lines.append( arg + "\t" + str(getattr(args, arg)).strip() )
+        #         else:
+        #             lines.append( arg + "\t" + "NA" )
+        # with open(os.path.join(cwd,"Report.data"), "w") as f:
+        #     for line in lines:
+        #         line = line.strip()
+        #         if line:
+        #             f.write(line+"\n")
 
-        lines = []
-        for arg in dir(args):
-            if not arg.startswith("_"):
-                if getattr(args, arg):
-                    lines.append( arg + "\t" + str(getattr(args, arg)).strip() )
-                else:
-                    lines.append( arg + "\t" + "NA" )
-        with open(os.path.join(cwd,"Report.data"), "w") as f:
-            for line in lines:
-                line = line.strip()
-                if line:
-                    f.write(line+"\n")
+        # ## DESeq2
+        # if args.sample_info:
+        #     jobs = ["convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
+        #             "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
+        #             "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
+        #             "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
+        #             "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
+        #             "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
+        #             "rm {} {} {} {}".format(os.path.join(cwd, "1.png"),
+        #                        os.path.join(cwd, "2.png"),
+        #                        os.path.join(cwd, "3.png"),
+        #                        os.path.join(cwd, "4.png"),
+        #                        ),
+        #             ]
+        #     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        #     q.join()
+        #     if is_error:
+        #         exit(is_error)
 
-        ## DESeq2
-        if args.sample_info:
-            jobs = ["convert -density 200 {pdf} -flatten 1.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig2.MA_plot.pdf")),
-                    "convert -density 200 {pdf} -flatten 2.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig3.Vulcano_plot.pdf")),
-                    "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"1.png"), png2=os.path.join(cwd,"2.png"), output=os.path.join(cwd,"plots1.png")),
-                    "convert -density 200 {pdf} -flatten 3.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig5.Heatmap.pdf")),
-                    "convert -density 200 {pdf} -flatten 4.png".format(pdf=os.path.join(args.main_outdir, "DESeq2", "Fig6.PCA.pdf")),
-                    "montage {png1} {png2} -geometry +0.0+0.0 -tile 2x1 {output}".format(png1=os.path.join(cwd,"3.png"), png2=os.path.join(cwd,"4.png"), output=os.path.join(cwd,"plots2.png")),
-                    "rm {} {} {} {}".format(os.path.join(cwd, "1.png"),
-                               os.path.join(cwd, "2.png"),
-                               os.path.join(cwd, "3.png"),
-                               os.path.join(cwd, "4.png"),
-                               ),
-                    ]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-            q.join()
-            if is_error:
-                exit(is_error)
-
+        # jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
+        #         "{} cat {}rna-seq-qc/Rnw2PDF.R | {}R --vanilla --quiet --args {} {}".format(R_libraries_export, script_path, R_path, cwd, os.path.join(script_path,"rna-seq-qc","Report.Rnw")),
+        #         "rm {} {} {} {}".format(os.path.join(cwd, "Report.aux"),
+        #                                 os.path.join(cwd, "Report.tex"),
+        #                                 os.path.join(cwd, "Report.log"),
+        #                                 os.path.join(cwd, "Report.data"),
+        #                                 ),
+        #         ]
         jobs = ["[ -f {} ] || ( {} cat {}rna-seq-qc/Report_table.R | {}R --vanilla --quiet --args {} {} )".format(os.path.join(cwd,"Report.tsv"), R_libraries_export, script_path, R_path, args.main_indir, args.main_outdir),
-                "{} cat {}rna-seq-qc/Rnw2PDF.R | {}R --vanilla --quiet --args {} {}".format(R_libraries_export, script_path, R_path, cwd, os.path.join(script_path,"rna-seq-qc","Report.Rnw")),
-                "rm {} {} {} {}".format(os.path.join(cwd, "Report.aux"),
-                                        os.path.join(cwd, "Report.tex"),
-                                        os.path.join(cwd, "Report.log"),
-                                        os.path.join(cwd, "Report.data"),
-                                        ),
                 ]
         q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         q.join()
         if is_error:
             exit(is_error)
 
-        # remove files if
-        if args.sample_info:
-            jobs = ["rm {} {}".format( os.path.join(cwd, "plots1.png"), os.path.join(cwd, "plots2.png"), ),
-                    ]
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-            q.join()
-            if is_error:
-                exit(is_error)
-
-        print "Out:", os.path.join(args.outdir, outdir)
+        # # remove files if
+        # if args.sample_info:
+        #     jobs = ["rm {} {}".format( os.path.join(cwd, "plots1.png"), os.path.join(cwd, "plots2.png"), ),
+        #             ]
+        #     q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        #     q.join()
+        #     if is_error:
+        #         exit(is_error)
+        #
+        # print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
     return os.path.join(args.outdir, outdir)
 
