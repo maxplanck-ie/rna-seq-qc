@@ -112,6 +112,7 @@ bowtie2_path = "/package/bowtie2-2.2.3/"; bowtie2_ver = "Bowtie2-2.2.3"
 bowtie2_export = "export PATH={}:$PATH &&".format(bowtie2_path)
 picardtools_path = "/package/picard-tools-1.121/"; picardtools_ver = "Picard-tools-1.1.21"
 tophat2_path = "/package/tophat-2.0.13.Linux_x86_64/"; tophat2_ver = "TopHat-2.0.13"
+star_path = "/package/STAR-2.5.2b/bin/"; star_ver = "STAR_2.5.2b"
 feature_counts_path = "/package/subread-1.5.0-p1/bin/"; feature_counts_ver = "featureCounts (subread-1.5.0-p1)"
 htseq_count_path = "/package/HTSeq-0.6.1/bin/"; htseq_count_ver = "HTSeq-0.6.1"
 R_path = "/package/R-3.2.0/bin/"; R_ver = "R-3.2.0"
@@ -137,6 +138,7 @@ if socket.gethostname() == "pc305.immunbio.mpg.de":
     bowtie2_export = ""
     picardtools_path = "/home/kilpert/Software/picard-tools/picard-tools-1.115/"; picardtools_ver = "Picard-tools-1.115"
     tophat2_path = ""; tophat2_ver = "TopHat-2"
+    star_path = ""; star_ver = ""
     feature_counts_path = ""; feature_counts_ver = "featureCounts"
     htseq_count_path = ""; htseq_count_ver = "HTSeq"
     R_path = "/usr/bin/"; R_ver = "R-3.2.3"
@@ -193,6 +195,7 @@ def parse_args():
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="TopHat2")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
+    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="--twopassMode Basic")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
@@ -255,6 +258,7 @@ def parse_args():
         args.genome_index = configs["genome_index"]
         args.transcriptome_index = configs["transcriptome_index"]
         args.hisat_index = configs["hisat_index"]
+        args.star_index = configs["star_index"]
         args.gtf = configs["gtf"]
         args.bed = configs["bed"]
     except:
@@ -269,10 +273,14 @@ def parse_args():
     if args.hisat_opts:
         args.hisat_opts = args.hisat_opts.strip('"')
         args.hisat_opts = args.hisat_opts.strip("'")
+    if args.star_opts:
+        args.star_opts = args.star_opts.strip('"')
+        args.star_opts = args.star_opts.strip("'")
 
     try:
         args.tophat_opts = args.tophat_opts + " " + configs["tophat_opts"]
         args.hisat_opts = args.hisat_opts + " " + configs["hisat_opts"]
+        args.star_opts = args.star_opts + " " + configs["star_opts"]
     except:
         pass
 
@@ -1218,6 +1226,8 @@ def run_tophat(args, q, indir):
     return os.path.join(args.outdir, outdir)
 
 
+#### HISAT2 ############################################################################################################
+
 def run_hisat2(args, q, indir):
     """
     Run HISAT2 mapping.
@@ -1335,6 +1345,89 @@ def run_hisat2(args, q, indir):
             tophat_file = "{}/accepted_hits.bam".format(bname)
             os.symlink(tophat_file, bname+".bam")
             subprocess.call("{}samtools index {}.bam".format(samtools_path, bname), shell=True)
+
+        print "Out:", os.path.join(args.outdir, outdir)
+    os.chdir(args.outdir)
+    return os.path.join(args.outdir, outdir)
+
+
+#### STAR ############################################################################################################
+
+def run_star(args, q, indir):
+    """
+    Run STAR mapping.
+    """
+    analysis_name = "STAR"
+    args.analysis_counter += 1
+    outdir = "{}".format(analysis_name)
+    print "\n{} {}) {}".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), args.analysis_counter, analysis_name)
+
+    if args.overwrite and os.path.isdir(outdir):
+        shutil.rmtree(outdir)
+
+    if os.path.isdir(outdir):
+        print "Output folder already present: {}".format(outdir)
+    else:
+        os.mkdir(outdir)
+        os.chdir(outdir)
+        cwd = os.getcwd()
+        logfile = os.path.join(cwd, "LOG")
+
+        print "In:", os.path.abspath(indir)
+        infiles = check_for_paired_infiles(args, indir, ".fastq.gz")
+
+        with open(logfile, "w") as log:
+            log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
+
+        if args.paired:
+            for pair in infiles:
+                bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
+                
+                if not os.path.isdir( os.path.join(cwd, bname) ):
+                    os.mkdir( os.path.join(cwd, bname) )
+              
+                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {R1} {R2} --readFilesCommand 'zcat' --outSAMunmapped Within --outFileNamePrefix {prefix} --outStd SAM | {samtools} sort -T {bname} -@{samtools_threads} -m{samtools_mem}G -O bam - > {bam} && {samtools} index {bam}"\
+                            .format(star=os.path.join(star_path, "STAR"),
+                                    threads=args.threads,
+                                    opts=args.star_opts,
+                                    gtf=args.gtf,
+                                    index=args.star_index,
+                                    R1=pair[0],
+                                    R2=pair[1],
+                                    prefix=os.path.join(cwd, bname, bname),
+                                    samtools=os.path.join(samtools_path, "samtools"),
+                                    bname=bname,
+                                    samtools_threads=samtools_threads,
+                                    samtools_mem=samtools_mem,
+                                    bam=os.path.join(cwd, bname+".bam"),)]
+                
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        else:
+            for infile in infiles:
+                bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
+                
+                if not os.path.isdir( os.path.join(cwd, bname) ):
+                    os.mkdir( os.path.join(cwd, bname) )
+
+                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {R} --readFilesCommand 'zcat' --outSAMunmapped Within --outFileNamePrefix {prefix} --outStd SAM | {samtools} sort -T {bname} -@{samtools_threads} -m{samtools_mem}G -O bam - > {bam} && {samtools} index {bam}" \
+                        .format(star=os.path.join(star_path, "STAR"),
+                                threads=args.threads,
+                                opts=args.star_opts,
+                                gtf=args.gtf,
+                                index=args.star_index,
+                                R=infile,
+                                prefix=os.path.join(cwd, bname, bname),
+                                samtools=os.path.join(samtools_path, "samtools"),
+                                bname=bname,
+                                samtools_threads=samtools_threads,
+                                samtools_mem=samtools_mem,
+                                bam=os.path.join(cwd, bname + ".bam"), )]
+
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        print
+        q.join()
+        if is_error:
+            exit(is_error)
 
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
@@ -2058,6 +2151,11 @@ def main():
         bam_dir = run_hisat2(args, q, indir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
+    elif args.mapping_prg == 'STAR':
+        t1 = datetime.datetime.now()
+        bam_dir = run_star(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
 
     ## Run htseq-count
     t1 = datetime.datetime.now()
@@ -2110,5 +2208,5 @@ if __name__ == "__main__":
     print "\n{} rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
     if os.path.isdir(outdir):
         print "Output stored in: {}\n".format(outdir)
-    if os.path.isfile(os.path.join(outdir,"project_report","Report.pdf")):
-        print "Project report:", os.path.join(outdir,"project_report","Report.pdf")
+    # if os.path.isfile(os.path.join(outdir,"project_report","Report.pdf")):
+    #     print "Project report:", os.path.join(outdir,"project_report","Report.pdf")
