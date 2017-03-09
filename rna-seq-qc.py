@@ -159,7 +159,7 @@ default_parallel = 1          # Parallel files
 samtools_mem = 1
 samtools_threads = 1
 
-if socket.gethostname().startswith("deep"):
+if socket.gethostname().startswith(("deep", "maximus", "minimus")):
     temp_dir = "/data/extended"
     default_threads = 4
     default_parallel = 6
@@ -195,7 +195,7 @@ def parse_args():
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="TopHat2")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
-    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="--twopassMode Basic")
+    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="") #--twopassMode Basic --sjdbOverhang 100
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
@@ -438,7 +438,7 @@ def run_subprocess(cmd, cwd, td, shell=False, logfile=None, backcopy=True, verbo
                 shutil.move(os.path.join(td,f), cwd)
 
 
-def queue_worker(q, verbose=False, rest=0.2):
+def queue_worker(q, verbose=False, rest=0.3):
     """
     Worker executing jobs (command lines) sent to the queue.
     """
@@ -1386,20 +1386,36 @@ def run_star(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
               
-                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {R1} {R2} --readFilesCommand 'zcat' --outSAMunmapped Within --outFileNamePrefix {prefix} --outStd SAM | {samtools} sort -T {bname} -@{samtools_threads} -m{samtools_mem}G -O bam - > {bam} && {samtools} index {bam}"\
+                # jobs = ["{star} --runThreadN {threads} {opts} --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {read1} {read2} --readFilesCommand zcat --outSAMunmapped Within --outFileNamePrefix {prefix} --outSAMtype BAM SortedByCoordinate > {bam}"\
+                #             .format(star=os.path.join(star_path, "STAR"),
+                #                     threads=args.threads,
+                #                     opts=args.star_opts,
+                #                     gtf=args.gtf,
+                #                     index=args.star_index,
+                #                     read1=pair[0],
+                #                     read2=pair[1],
+                #                     prefix=os.path.join(cwd, bname, bname),
+                #                     bam=os.path.join(cwd, bname + ".bam")),
+                #         "{samtools} index {bam}"\
+                #             .format(samtools=os.path.join(samtools_path, "samtools"),
+                #                     bam=os.path.join(cwd, bname + ".bam"))]
+                
+                jobs = ["{star} --runThreadN {threads} {opts} --genomeDir {index} --readFilesIn {read1} {read2} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
                             .format(star=os.path.join(star_path, "STAR"),
                                     threads=args.threads,
                                     opts=args.star_opts,
-                                    gtf=args.gtf,
                                     index=args.star_index,
-                                    R1=pair[0],
-                                    R2=pair[1],
-                                    prefix=os.path.join(cwd, bname, bname),
-                                    samtools=os.path.join(samtools_path, "samtools"),
-                                    bname=bname,
-                                    samtools_threads=samtools_threads,
-                                    samtools_mem=samtools_mem,
-                                    bam=os.path.join(cwd, bname+".bam"),)]
+                                    read1=pair[0],
+                                    read2=pair[1],
+                                    prefix=os.path.join(cwd, bname, bname+"."),
+                                    ),
+                        "ln -s {bam} {link}"\
+                            .format(bam=os.path.join(cwd, bname, bname+".Aligned.sortedByCoord.out.bam"),
+                                    link=os.path.join(cwd, bname+".bam")),
+                        "{samtools} index {bam}"\
+                            .format(samtools=os.path.join(samtools_path, "samtools"),
+                                    bam=os.path.join(cwd, bname + ".bam"))
+                        ]
                 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         else:
@@ -1409,19 +1425,21 @@ def run_star(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {R} --readFilesCommand 'zcat' --outSAMunmapped Within --outFileNamePrefix {prefix} --outStd SAM | {samtools} sort -T {bname} -@{samtools_threads} -m{samtools_mem}G -O bam - > {bam} && {samtools} index {bam}" \
-                        .format(star=os.path.join(star_path, "STAR"),
-                                threads=args.threads,
-                                opts=args.star_opts,
-                                gtf=args.gtf,
-                                index=args.star_index,
-                                R=infile,
-                                prefix=os.path.join(cwd, bname, bname),
-                                samtools=os.path.join(samtools_path, "samtools"),
-                                bname=bname,
-                                samtools_threads=samtools_threads,
-                                samtools_mem=samtools_mem,
-                                bam=os.path.join(cwd, bname + ".bam"), )]
+                jobs = ["{star} --runThreadN {threads} {opts} --genomeDir {index} --readFilesIn {read} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
+                            .format(star=os.path.join(star_path, "STAR"),
+                                    threads=args.threads,
+                                    opts=args.star_opts,
+                                    index=args.star_index,
+                                    read=infile,
+                                    prefix=os.path.join(cwd, bname, bname+"."),
+                                    ),
+                        "ln -s {bam} {link}"\
+                            .format(bam=os.path.join(cwd, bname, bname+".Aligned.sortedByCoord.out.bam"),
+                                    link=os.path.join(cwd, bname+".bam")),
+                        "{samtools} index {bam}"\
+                            .format(samtools=os.path.join(samtools_path, "samtools"),
+                                    bam=os.path.join(cwd, bname + ".bam"))
+                        ]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         print
