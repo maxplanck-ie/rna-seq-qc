@@ -30,7 +30,7 @@ __description__ = """
     reads_R2.fastq.gz). In addition, a specific genome version argument must be
     provided (e.g. -g mm10) to define the reference data used for annotation.
     This loads a number of indexes for mapping programs (Bowtie2, TopHat2,
-    HISAT2 (new!), etc.) from the corresponding configuration file of the
+    HISAT2, STAR (new!) etc.) from the corresponding configuration file of the
     rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg). Additional genomes for
     selection can be provided as cfg-files by the user. The pipeline works for
     single end and paired end sequences alike.
@@ -193,9 +193,9 @@ def parse_args():
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
     parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string. The option '--paired' is always used for paired-end data. (default: '%(default)s')", type=str, default="--stringency 2")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
-    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="TopHat2")
+    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: STAR, TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="STAR")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
-    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="") #--twopassMode Basic --sjdbOverhang 100
+    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="--twopassMode Basic")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
@@ -1226,7 +1226,7 @@ def run_tophat(args, q, indir):
     return os.path.join(args.outdir, outdir)
 
 
-#### HISAT2 ############################################################################################################
+#### HISAT ############################################################################################################
 
 def run_hisat2(args, q, indir):
     """
@@ -1385,25 +1385,12 @@ def run_star(args, q, indir):
                 
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
-              
-                # jobs = ["{star} --runThreadN {threads} {opts} --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {read1} {read2} --readFilesCommand zcat --outSAMunmapped Within --outFileNamePrefix {prefix} --outSAMtype BAM SortedByCoordinate > {bam}"\
-                #             .format(star=os.path.join(star_path, "STAR"),
-                #                     threads=args.threads,
-                #                     opts=args.star_opts,
-                #                     gtf=args.gtf,
-                #                     index=args.star_index,
-                #                     read1=pair[0],
-                #                     read2=pair[1],
-                #                     prefix=os.path.join(cwd, bname, bname),
-                #                     bam=os.path.join(cwd, bname + ".bam")),
-                #         "{samtools} index {bam}"\
-                #             .format(samtools=os.path.join(samtools_path, "samtools"),
-                #                     bam=os.path.join(cwd, bname + ".bam"))]
-                
-                jobs = ["{star} --runThreadN {threads} {opts} --genomeDir {index} --readFilesIn {read1} {read2} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
+                             
+                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {read1} {read2} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
                             .format(star=os.path.join(star_path, "STAR"),
                                     threads=args.threads,
                                     opts=args.star_opts,
+                                    gtf=args.gtf,
                                     index=args.star_index,
                                     read1=pair[0],
                                     read2=pair[1],
@@ -1425,10 +1412,11 @@ def run_star(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                jobs = ["{star} --runThreadN {threads} {opts} --genomeDir {index} --readFilesIn {read} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
+                jobs = ["{star} --runThreadN {threads} {opts} --sjdbOverhang 100 --sjdbGTFfile {gtf} --genomeDir {index} --readFilesIn {read} --readFilesCommand zcat --outSAMunmapped Within --outSAMtype BAM SortedByCoordinate --outFileNamePrefix {prefix}"\
                             .format(star=os.path.join(star_path, "STAR"),
                                     threads=args.threads,
                                     opts=args.star_opts,
+                                    gtf=args.gtf,
                                     index=args.star_index,
                                     read=infile,
                                     prefix=os.path.join(cwd, bname, bname+"."),
