@@ -1203,34 +1203,27 @@ def run_tophat(args, q, indir):
                 ## read metrics from file
                 mate_inner_dist, mate_std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate-inner-dist", "mate-std-dev" )
 
-                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}"\
-                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, mate_inner_dist, mate_std_dev,
-                            os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
-                            #re.sub("_R*[1|2].fastq.gz","",os.path.basename(pair[0])), args.transcriptome_index, args.genome_index, pair[0], pair[1])]
+                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}".format(
+                            bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, mate_inner_dist, mate_std_dev,
+                            os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, pair[0], pair[1]),
+                        "mv {bam_from} {bam_to}".format(bam_from=os.path.join(cwd, bname, "accepted_hits.bam"), bam_to=os.path.join(cwd, bname+".bam")),
+                        "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname+".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         else:
             for infile in infiles:
                 bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
 
-                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --output-dir {} --transcriptome-index {} {} {}"\
-                            .format(bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile)]
+                jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --output-dir {} --transcriptome-index {} {} {}".format(
+                            bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, infile),
+                        "mv {bam_from} {bam_to}".format(bam_from=os.path.join(cwd, bname, "accepted_hits.bam"), bam_to=os.path.join(cwd, bname + ".bam")),
+                        "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname + ".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         print
         q.join()
         if is_error:
             exit(is_error)
-
-        ## Generate links in main TopHat output folder and index files
-        for infile in infiles:
-            if args.paired:
-                bname = re.sub("_R*[1|2].fastq.gz$", "", os.path.basename(infile[0]))
-            else:
-                bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
-            tophat_file = "{}/accepted_hits.bam".format(bname)
-            os.symlink(tophat_file, bname+".bam")
-            subprocess.call("{}samtools index {}.bam".format(samtools_path, bname), shell=True)
 
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
@@ -1305,9 +1298,9 @@ def run_hisat2(args, q, indir):
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.bam"), cmdl, os.path.join(cwd, bname+"/"+"header.sam")),
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam") ),
-                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam") ),
-                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam"), ),
-                        ]
+                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam"), os.path.join(cwd, bname+".bam") ),
+                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")),
+                        "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname + ".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         ## SE
@@ -1337,25 +1330,15 @@ def run_hisat2(args, q, indir):
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.bam"), cmdl, os.path.join(cwd, bname+"/"+"header.sam")),
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits2.bam") ),
-                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits2.bam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam") ),
+                        "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits2.bam"), os.path.join(cwd, bname+".bam") ),
                         "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")),
-                        ]
+                        "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname + ".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
         print
         q.join()
         if is_error:
             exit(is_error)
-
-        ## Generate links in main HISAT2 output folder and index files
-        for infile in infiles:
-            if args.paired:
-                bname = re.sub("_R*[1|2].fastq.gz$", "", os.path.basename(infile[0]))
-            else:
-                bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
-            tophat_file = "{}/accepted_hits.bam".format(bname)
-            os.symlink(tophat_file, bname+".bam")
-            subprocess.call("{}samtools index {}.bam".format(samtools_path, bname), shell=True)
 
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
