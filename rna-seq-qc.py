@@ -195,7 +195,7 @@ def parse_args():
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: STAR, TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="STAR")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
-    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string (default: '%(default)s')", type=str, default="--twopassMode Basic")
+    parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string, e.g.: '--twopassMode Basic' (default: '%(default)s')", type=str, default="")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
