@@ -19,9 +19,8 @@ __description__ = """
     Following steps are executed in succession: FASTQ subsampling (optional),
     quality check with FASTQC, trimming of reads with Trim Galore (optional),
     estimation of insert size and strand specificity with RSeQC, mapping with
-    TopHat, extensive quality check with RSeQC, counting of features with
-    featureCounts (default) or htseq-count, differential expression analysis
-    with DESeq2 (optional).
+    STAR (default), counting of features with featureCounts (default) or
+    htseq-count, differential expression analysis with DESeq2 (optional).
 
     The pipeline requires gzipped FASTQ files (.fastq.gz) for input, which are
     loaded from an input directory (-i INDIR). Read files belonging together
@@ -188,7 +187,6 @@ def parse_args():
     parser.add_argument("-p", "--parallel", dest="parallel", metavar="INT", help="Number of files in parallel processing (default: '%(default)s')", type=int, default=default_parallel)
     parser.add_argument("-t", "--threads", dest="threads", metavar="INT", help="Maximum number of threads for a single process (default: '%(default)s')", type=int, default=default_threads)
     parser.add_argument("--fastq-downsample", dest="fastq_downsample", metavar="INT", help="Use first n sequences in fastq only (for TESTING!!!)", type=int, default=None)
-    parser.add_argument("--seed", dest="seed", metavar="INT", help="Random sampling seed", type=int, default=None)
     parser.add_argument("--no-fastqc", dest="no_fastqc", action="store_true", default=False, help="Deactivate FastQC")
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
     parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string. The option '--paired' is always used for paired-end data. (default: '%(default)s')", type=str, default="--stringency 2")
@@ -242,10 +240,6 @@ def parse_args():
     args.outdir = os.path.join(args.cwd, os.path.expanduser(args.outdir))
 
     args.error = 0
-
-    ### Add
-    # if args.seed is None:
-    #     args.seed = random.randint(12345, 987654321)
 
     ## Get reference data paths from config file
     ref_cfg_file_path = os.path.join(script_path, "rna-seq-qc/{}.cfg".format(args.genome))
@@ -788,12 +782,12 @@ def run_trim_galore(args, q, indir, analysis_name="Trim Galore"):
 
 def run_library_type(args, q, indir):
     """
-    - Random downsampling to n=500,000 reads
+    - Random downsampling to n=100,000 reads
     - Bowtie2 mapping to genome -> library_type (infer_experiment; RSeQC)
     - Save a file with settings for TopHat2 (*.TopHat.txt): library-type
     """
 
-    n = 500000  # number of downsampling reads
+    n = 100000  # number of downsampling reads
 
     analysis_name = "library_type"
     args.analysis_counter += 1
@@ -836,35 +830,37 @@ def run_library_type(args, q, indir):
             ## downsampling
             ###################################################################
 
-            if not args.seed:
-                if args.paired:
-                    for pair in infiles:
-                        # print "PE"
-                        bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
-                        jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_pe.sh {} {} {} {} {}".format(script_path,
-                                    n,
-                                    pair[0],
-                                    pair[1],
-                                    os.path.join(cwd,bname+"_R1.fastq.gz"),
-                                    os.path.join(cwd,bname+"_R2.fastq.gz")),]
-                        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-                else:
-                    for infile in infiles:
-                        # print "SE"
-                        bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                        jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_se.sh {} {} {}".format(script_path,
-                                    n,
-                                    infile,
-                                    os.path.join(cwd,bname+".fastq.gz")),]
-                        q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+            if args.paired:
+                for pair in infiles:
+                    jobs = [
+                        "{downsample} {n} {threads} {in1} {out1} {in2} {out2}" \
+                            .format(
+                            downsample=os.path.join(script_path, "rna-seq-qc",
+                                                    "tools",
+                                                    "downsample_se_pe.sh"),
+                            n=n,
+                            threads=args.threads,
+                            in1=pair[0],
+                            out1=os.path.join(cwd, os.path.basename(pair[0])),
+                            in2=pair[1],
+                            out2=os.path.join(cwd, os.path.basename(pair[1]))
+                            )]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                               backcopy=True))
             else:
-                infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
-                print infiles
-
                 for infile in infiles:
-                    jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
-
-                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+                    jobs = ["{downsample} {n} {threads} {in1} {out1}" \
+                                .format(
+                        downsample=os.path.join(script_path, "rna-seq-qc",
+                                                "tools",
+                                                "downsample_se_pe.sh"),
+                        n=n,
+                        threads=args.threads,
+                        in1=infile,
+                        out1=os.path.join(cwd, os.path.basename(infile))
+                        )]
+                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                               backcopy=True))
 
             q.join()
             if is_error:
@@ -971,11 +967,11 @@ def run_library_type(args, q, indir):
 
 def run_distance_metrics(args, q, indir):
     """
-    - Random downsampling to 1,000,000 reads for TopHat2
+    - Random downsampling to 500,000 reads for TopHat2
     - Bowtie2 mapping to transcriptome -> inner_distance (RSeQC) or InsertSizeMetrics (Picard) + CollectAlignmentSummaryMetrics (Picard)
     - Save a setting file: mate-inner-dist, mate-std-dev
     """
-    n = 1000000  # number of downsampling reads
+    n = 500000  # number of downsampling reads
 
     analysis_name = "distance_metrics"
     args.analysis_counter += 1
@@ -1002,35 +998,37 @@ def run_distance_metrics(args, q, indir):
         ###################################################################
         ## downsampling
         ###################################################################
-        if not args.seed:
-            if args.paired:
-                for pair in infiles:
-                    # print "PE"
-                    bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
-                    jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_pe.sh {} {} {} {} {}".format(script_path,
-                                n,
-                                pair[0],
-                                pair[1],
-                                os.path.join(cwd,bname+"_R1.fastq.gz"),
-                                os.path.join(cwd,bname+"_R2.fastq.gz")),]
-                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
-            else:
-                for infile in infiles:
-                    # print "SE"
-                    bname = re.sub(".fastq.gz$","",os.path.basename(infile))
-                    jobs = ["bash {}rna-seq-qc/downsample_reservoir/downsample_reservoir_se.sh {} {} {}".format(script_path,
-                                n,
-                                infile,
-                                os.path.join(cwd,bname+".fastq.gz")),]
-                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+        if args.paired:
+            for pair in infiles:
+                jobs = [
+                    "{downsample} {n} {threads} {in1} {out1} {in2} {out2}" \
+                        .format(
+                        downsample=os.path.join(script_path, "rna-seq-qc",
+                                                "tools",
+                                                "downsample_se_pe.sh"),
+                        n=n,
+                        threads=args.threads,
+                        in1=pair[0],
+                        out1=os.path.join(cwd, os.path.basename(pair[0])),
+                        in2=pair[1],
+                        out2=os.path.join(cwd, os.path.basename(pair[1]))
+                    )]
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True))
         else:
-            infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
-            print infiles
-
             for infile in infiles:
-                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -n {} -s {} {} {}".format(python_path, script_path, n, args.seed, infile, os.path.basename(infile) ),]
-
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, backcopy=True, keep_temp=False))
+                jobs = ["{downsample} {n} {threads} {in1} {out1}" \
+                    .format(
+                    downsample=os.path.join(script_path, "rna-seq-qc",
+                                            "tools",
+                                            "downsample_se_pe.sh"),
+                    n=n,
+                    threads=args.threads,
+                    in1=infile,
+                    out1=os.path.join(cwd, os.path.basename(infile))
+                )]
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True))
 
         q.join()
         if is_error:
@@ -2073,7 +2071,6 @@ def main():
         print "Trim Galore options:", args.trim_galore_opts
         print "TopHat options:", args.tophat_opts
         print "htseq-count options:", args.htseq_count_opts
-        print "Seed (random):", args.seed
         print "FASTA index:", args.fasta_index
         print "Genome index (Bowtie2):", args.genome_index
         print "Transcriptome index (TopHat2):", args.transcriptome_index
@@ -2114,106 +2111,106 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    # if not args.no_fastqc:
-    #     ## Run FastQC
-    #     t1 = datetime.datetime.now()
-    #     run_fastqc(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run Trim Galore!
-    # if args.trim:
-    #     t1 = datetime.datetime.now()
-    #     indir = run_trim_galore(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run FastQC on trimmed reads
-    # if args.trim and not args.no_fastqc:
-    #     ## Run FastQC
-    #     t1 = datetime.datetime.now()
-    #     run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run library_type
-    # t1 = datetime.datetime.now()
-    # run_library_type(args, q, indir)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    # try:
-    #     args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
-    # except:
-    #     pass
-    #
-    # if args.paired and args.mapping_prg == 'TopHat2':
-    #     ## Run strand_specificity
-    #     t1 = datetime.datetime.now()
-    #     run_distance_metrics(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Stop here if requested by user (--no-bam)
-    # if args.no_bam:
-    #     print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
-    #     print "Output stored in: {}\n".format(args.outdir)
-    #     exit(0)
-    #
-    # ## Run TopHat
-    # if args.mapping_prg == 'TopHat2':
-    #     t1 = datetime.datetime.now()
-    #     bam_dir = run_tophat(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    # elif args.mapping_prg == 'HISAT2':
-    #     t1 = datetime.datetime.now()
-    #     bam_dir = run_hisat2(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    # elif args.mapping_prg == 'STAR':
-    #     t1 = datetime.datetime.now()
-    #     bam_dir = run_star(args, q, indir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run htseq-count
-    # t1 = datetime.datetime.now()
-    # if args.count_prg == "featureCounts":
-    #     count_dir = run_featureCounts(args, q, bam_dir)
-    # elif args.count_prg == "htseq-count":
-    #     count_dir = run_htseq_count(args, q, bam_dir)
-    # else:
-    #     print "Error! Unknown feature counting program:", args.count_prg
-    #     exit(1)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## RUN bigwig file creation
-    # if args.bw:
-    #     t1 = datetime.datetime.now()
-    #     run_bigWig(args, q, bam_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run DESeq2
-    # if args.sample_info:
-    #     t1 = datetime.datetime.now()
-    #     run_deseq2(args, q, count_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
-    #
-    # ## Run project_summary
-    # t1 = datetime.datetime.now()
-    # run_project_report(args, q)
-    # t2 = datetime.datetime.now()
-    # print "Duration:", t2-t1
-    #
-    # ## Run RSeQC
-    # if args.rseqc:
-    #     t1 = datetime.datetime.now()
-    #     run_rseqc(args, q, bam_dir)
-    #     t2 = datetime.datetime.now()
-    #     print "Duration:", t2-t1
+    if not args.no_fastqc:
+        ## Run FastQC
+        t1 = datetime.datetime.now()
+        run_fastqc(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run Trim Galore!
+    if args.trim:
+        t1 = datetime.datetime.now()
+        indir = run_trim_galore(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run FastQC on trimmed reads
+    if args.trim and not args.no_fastqc:
+        ## Run FastQC
+        t1 = datetime.datetime.now()
+        run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run library_type
+    t1 = datetime.datetime.now()
+    run_library_type(args, q, indir)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+    try:
+        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
+    except:
+        pass
+
+    if args.paired and args.mapping_prg == 'TopHat2':
+        ## Run strand_specificity
+        t1 = datetime.datetime.now()
+        run_distance_metrics(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Stop here if requested by user (--no-bam)
+    if args.no_bam:
+        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
+        print "Output stored in: {}\n".format(args.outdir)
+        exit(0)
+
+    ## Run TopHat
+    if args.mapping_prg == 'TopHat2':
+        t1 = datetime.datetime.now()
+        bam_dir = run_tophat(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+    elif args.mapping_prg == 'HISAT2':
+        t1 = datetime.datetime.now()
+        bam_dir = run_hisat2(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+    elif args.mapping_prg == 'STAR':
+        t1 = datetime.datetime.now()
+        bam_dir = run_star(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run htseq-count
+    t1 = datetime.datetime.now()
+    if args.count_prg == "featureCounts":
+        count_dir = run_featureCounts(args, q, bam_dir)
+    elif args.count_prg == "htseq-count":
+        count_dir = run_htseq_count(args, q, bam_dir)
+    else:
+        print "Error! Unknown feature counting program:", args.count_prg
+        exit(1)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## RUN bigwig file creation
+    if args.bw:
+        t1 = datetime.datetime.now()
+        run_bigWig(args, q, bam_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run DESeq2
+    if args.sample_info:
+        t1 = datetime.datetime.now()
+        run_deseq2(args, q, count_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+
+    ## Run project_summary
+    t1 = datetime.datetime.now()
+    run_project_report(args, q)
+    t2 = datetime.datetime.now()
+    print "Duration:", t2-t1
+
+    ## Run RSeQC
+    if args.rseqc:
+        t1 = datetime.datetime.now()
+        run_rseqc(args, q, bam_dir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
 
     return args.outdir
 
