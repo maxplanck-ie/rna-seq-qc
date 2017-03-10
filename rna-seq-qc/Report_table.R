@@ -205,6 +205,33 @@ if ( file.exists( indir ) ){
 }
 
 
+## Novoalign
+indir = file.path(main_outdir,"Novoalign")
+if ( file.exists( indir ) ){
+  files <- sort(list.files(indir, pattern="*.bam$", full.names=T))
+  ## files = sample(files) ## debugging only!!!
+  files
+  counts = c()
+  samples = c()
+
+  for (file in files) {
+    sample = gsub(".bam$","",basename(file))
+    samples = c(samples, sample)
+
+    ## count mapped (-F4) and primary (-F256) fragments
+    count = as.numeric( system(sprintf("%s view -c -F260 %s ", file.path(samtools_dir,"samtools"), file), intern=T) )
+    if (paired==T) { count = round(count / 2) }
+
+    counts = c( counts, count )
+    cat(paste(sample, count, "\n"), sep=" ")
+  }
+  df_counts = data.frame(samples=samples, Novoalign=counts)
+  report = merge(report, df_counts, by="samples")
+  report$Novoalign_perc = report$Novoalign / report$FASTQ * 100
+  report
+}
+
+
 ## counts ######################################################################
 ##featureCounts
 indir = file.path(main_outdir,"featureCounts")

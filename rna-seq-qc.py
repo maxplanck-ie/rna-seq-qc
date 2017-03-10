@@ -113,6 +113,7 @@ picardtools_path = "/package/picard-tools-1.121/"; picardtools_ver = "Picard-too
 tophat2_path = "/package/tophat-2.0.13.Linux_x86_64/"; tophat2_ver = "TopHat-2.0.13"
 star_path = "/package/STAR-2.5.2b/bin/"; star_ver = "STAR_2.5.2b"
 feature_counts_path = "/package/subread-1.5.0-p1/bin/"; feature_counts_ver = "featureCounts (subread-1.5.0-p1)"
+novoalign_path="/package/novoalign-3.07.00/"; novoalign_ver = "3.07.00"
 htseq_count_path = "/package/HTSeq-0.6.1/bin/"; htseq_count_ver = "HTSeq-0.6.1"
 R_path = "/package/R-3.2.0/bin/"; R_ver = "R-3.2.0"
 samtools_path = "/package/samtools-1.2/"; samtools_ver = "Samtools-1.2"
@@ -194,13 +195,14 @@ def parse_args():
     parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: STAR, TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="STAR")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
     parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string, e.g.: '--twopassMode Basic' (default: '%(default)s')", type=str, default="")
+    parser.add_argument("--novoalign_opts", dest="novoalign_opts", metavar="STR", help="Novoalign option string, e.g.: '' (default: '%(default)s')", type=str, default="-k -r A 20")
     parser.add_argument("--hisat_opts", dest="hisat_opts", metavar="STR", help="HISAT2 option string (default: '%(default)s')", type=str, default="")
     parser.add_argument("--count-prg", dest="count_prg", metavar="STR", help="Program used for counting features: featureCounts or htseq-count (default: '%(default)s')", type=str, default="featureCounts")
     parser.add_argument("--featureCounts_opts", dest="featureCounts_opts", metavar="STR", help="featureCounts option string. The options '-p -B' are always used for paired-end data. (default: '%(default)s')", type=str, default="-C -Q 10 --primary")
     parser.add_argument("--htseq-count_opts", dest="htseq_count_opts", metavar="STR", help="HTSeq htseq-count option string (default: '%(default)s')", type=str, default="--mode union")
     parser.add_argument("--bw", dest="bw", action="store_true", default=False, help="Generate BW (bigwig) files")
     parser.add_argument("--library-type", dest="library_type", metavar="STR", help="Library type following TopHat naming scheme, e.g. fr-firstrand (default: '%(default)s')", type=str, default="auto")
-    parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard or RSeQC (default: '%(default)s')", type=str, default="Picard")
+    # parser.add_argument("--insert-metrics", dest="insert_metrics", metavar="STR", help="Calculate insert size metrics (mean, sd) using Picard or RSeQC (default: '%(default)s')", type=str, default="Picard")
     parser.add_argument("--bowtie_opts", dest="bowtie_opts", metavar="STR", help="Bowtie2 option string. For parameter estimation step only (NO direct effect on Tophat2 mapping!) (default: '%(default)s')", type=str, default="--end-to-end --fast")
     parser.add_argument("--report-secondary-alignments", dest="report_secondary_alignments", action="store_true", default=False, help="Output secondary alignments in BAM file. Default is to keep PRIMARY alignments only!!! WARNING: Caution using TopHat2 BAM files in downstream analysis, as the MAPQ scores are always set to 0 for multi-mapping reads!!!")
     parser.add_argument("--rseqc", dest="rseqc", action="store_true", default=False, help="Run RSeQC")
@@ -253,6 +255,7 @@ def parse_args():
         args.transcriptome_index = configs["transcriptome_index"]
         args.hisat_index = configs["hisat_index"]
         args.star_index = configs["star_index"]
+        args.novoalign_index = configs["novoalign_index"]
         args.gtf = configs["gtf"]
         args.bed = configs["bed"]
     except:
@@ -523,6 +526,19 @@ def convert_library_type(library_type, prog, paired):
             new = '1'
         elif library_type == 'fr-unstranded':
             new = '0'
+            
+            
+    elif prog == "Novoalign":
+        if library_type == 'fr-firststrand' and paired==True:
+            new = '-+'
+        elif library_type == 'fr-secondstrand' and paired==True:
+            new = '+-'
+        elif library_type == 'fr-firststrand' and paired==False:
+            new = '-'
+        elif library_type == 'fr-secondstrand' and paired==False:
+            new = '+'
+        elif library_type == 'fr-unstranded':
+            new = ''
 
     return new
 
@@ -954,8 +970,9 @@ def run_library_type(args, q, indir):
         ## write librariy type(s) to file
         with open(os.path.join(cwd, "library_type.txt"), "w") as f:
             f.write("TopHat2\t{}\n".format(library_type))
+            f.write("HISAT2\t{}\n".format(convert_library_type(library_type, 'HISAT2', args.paired)))
+            f.write("Novoalign\t{}\n".format(convert_library_type(library_type, 'Novoalign', args.paired)))
             f.write("RSeQC\t{}\n".format(convert_library_type( library_type, 'RSeQC', args.paired ) ))
-            f.write("HISAT2\t{}\n".format(convert_library_type( library_type, 'HISAT2', args.paired ) ))
             f.write("htseq-count\t{}\n".format(convert_library_type( library_type, 'htseq-count', args.paired ) ))
             f.write("featureCounts\t{}\n".format(convert_library_type( library_type, 'featureCounts', args.paired ) ))
 
@@ -969,7 +986,7 @@ def run_distance_metrics(args, q, indir):
     """
     - Random downsampling to 500,000 reads for TopHat2
     - Bowtie2 mapping to transcriptome -> inner_distance (RSeQC) or InsertSizeMetrics (Picard) + CollectAlignmentSummaryMetrics (Picard)
-    - Save a setting file: mate-inner-dist, mate-std-dev
+    - Save a setting file: mate_inner_dist, std_dev
     """
     n = 500000  # number of downsampling reads
 
@@ -1064,95 +1081,96 @@ def run_distance_metrics(args, q, indir):
         ## Picard InsertSizeMetrics
         #######################################################################
 
-        if args.insert_metrics == "Picard":
+        # if args.insert_metrics == "Picard":
 
-            ## Picard: CollectInsertSizeMetrics (mean, sd)
-            if not os.path.isdir("InsertSizeMetrics"):
-                os.mkdir("InsertSizeMetrics")
+        ## Picard: CollectInsertSizeMetrics (mean, sd)
+        if not os.path.isdir("InsertSizeMetrics"):
+            os.mkdir("InsertSizeMetrics")
 
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+        for infile in infiles:
+            bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
 
-                jobs = ["export PATH={}:$PATH && java -jar -Xmx4g {}CollectInsertSizeMetrics.jar INPUT={} OUTPUT={} HISTOGRAM_FILE={}"\
-                        .format( R_path, picardtools_path, os.path.join(cwd, infile),
-                                 os.path.join(cwd, "InsertSizeMetrics", bname+".InsertSizeMetrics.txt"),
-                                 os.path.join(cwd, "InsertSizeMetrics", bname+".histogram.pdf")),
-                        ]
+            jobs = ["export PATH={}:$PATH && java -jar -Xmx4g {}CollectInsertSizeMetrics.jar INPUT={} OUTPUT={} HISTOGRAM_FILE={}"\
+                    .format( R_path, picardtools_path, os.path.join(cwd, infile),
+                             os.path.join(cwd, "InsertSizeMetrics", bname+".InsertSizeMetrics.txt"),
+                             os.path.join(cwd, "InsertSizeMetrics", bname+".histogram.pdf")),
+                    ]
 
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-            q.join()
-            if is_error:
-                exit(is_error)
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        q.join()
+        if is_error:
+            exit(is_error)
 
-            ## CollectAlignmentSummaryMetrics (mean read length)
-            if not os.path.isdir("AlignmentSummaryMetrics"):
-                os.mkdir("AlignmentSummaryMetrics")
+        ## CollectAlignmentSummaryMetrics (mean read length)
+        if not os.path.isdir("AlignmentSummaryMetrics"):
+            os.mkdir("AlignmentSummaryMetrics")
 
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+        for infile in infiles:
+            bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
 
-                jobs = ["java -jar -Xmx4g {}CollectAlignmentSummaryMetrics.jar INPUT={} OUTPUT={}"\
-                            .format( picardtools_path,
-                                     os.path.join(cwd, infile),
-                                     os.path.join(cwd, "AlignmentSummaryMetrics", bname+".AlignmentSummaryMetrics.txt")),
-                        #"rm {}".format(os.path.join(cwd, infile)),
-                        ]
+            jobs = ["java -jar -Xmx4g {}CollectAlignmentSummaryMetrics.jar INPUT={} OUTPUT={}"\
+                        .format( picardtools_path,
+                                 os.path.join(cwd, infile),
+                                 os.path.join(cwd, "AlignmentSummaryMetrics", bname+".AlignmentSummaryMetrics.txt")),
+                    #"rm {}".format(os.path.join(cwd, infile)),
+                    ]
 
-                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-            q.join()
-            if is_error:
-                exit(is_error)
+            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        q.join()
+        if is_error:
+            exit(is_error)
 
-            for infile in infiles:
-                bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
+        for infile in infiles:
+            bname = re.sub(".transcriptome_mapped.bam$","",os.path.basename(infile))
 
-                with open("InsertSizeMetrics/{}.InsertSizeMetrics.txt".format(bname), "r") as f:
-                    metrics = f.readlines()[7].split()
-                    mean_insert_size = float(metrics[4])
-                    standard_deviation = float(metrics[5])
-                with open("AlignmentSummaryMetrics/{}.AlignmentSummaryMetrics.txt".format(bname), "r") as f:
-                    mean_read_length = float(f.readlines()[9].split()[15])
-                mate_inner_dist = "{:.0f}".format(mean_insert_size - mean_read_length*2)
-                mate_std_dev = "{:.0f}".format(standard_deviation)
-                with open("{}.TopHat2.txt".format(bname), "w") as f:
-                    f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
-                    f.write("mate-std-dev\t{}\n".format(mate_std_dev))
-        else:
-            ###############################################################
-            ## RSeQC inner_distance
-            ###############################################################
-            if not os.path.isdir("inner_distance"):
-                os.mkdir("inner_distance")
-
-            ## RSeQC (default)
-            if args.insert_metrics == "RSeQC":
-                for infile in infiles:
-                    bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
-
-                    jobs = ["export PATH={}:$PATH && {} {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path,
-                                        os.path.join(cwd, infile),
-                                        os.path.join(cwd, "inner_distance" , bname),
-                                        args.bed,
-                                        #bname) ]
-                                        os.path.join(cwd, "inner_distance", bname+".inner_distance.summary.txt")),
-                            #"rm {}".format(os.path.join(cwd, infile)),
-                            ]
-                    print jobs
-                    q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
-                q.join()
-                if is_error:
-                    exit(is_error)
-
-            for infile in infiles:
-                bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
-                with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
-                    lines = f.readlines()
-                    e = lines[1].split()
-                    mate_inner_dist = "{:.0f}".format(float(e[1]))
-                    mate_std_dev = "{:.0f}".format(float(e[3]))
-                with open("{}.TopHat2.txt".format(bname), "w") as f:
-                    f.write("mate-inner-dist\t{}\n".format(mate_inner_dist))
-                    f.write("mate-std-dev\t{}\n".format(mate_std_dev))
+            with open("InsertSizeMetrics/{}.InsertSizeMetrics.txt".format(bname), "r") as f:
+                metrics = f.readlines()[7].split()
+                insert_size = float(metrics[4])
+                standard_deviation = float(metrics[5])
+            with open("AlignmentSummaryMetrics/{}.AlignmentSummaryMetrics.txt".format(bname), "r") as f:
+                read_length = float(f.readlines()[9].split()[15])
+            mate_inner_dist = insert_size - read_length*2
+            with open("{}.TopHat2.txt".format(bname), "w") as f:
+                f.write("mate_inner_dist\t{:.0f}\n".format(mate_inner_dist))
+                f.write("std_dev\t{:.0f}\n".format(standard_deviation))
+                f.write("insert_size\t{:.0f}\n".format(insert_size))
+                f.write("read_length\t{:.0f}\n".format(read_length))
+        # else:
+        #     ###############################################################
+        #     ## RSeQC inner_distance
+        #     ###############################################################
+        #     if not os.path.isdir("inner_distance"):
+        #         os.mkdir("inner_distance")
+        #
+        #     ## RSeQC (default)
+        #     if args.insert_metrics == "RSeQC":
+        #         for infile in infiles:
+        #             bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
+        #
+        #             jobs = ["export PATH={}:$PATH && {} {}inner_distance.py -i {} -o {} -r {} > {}".format(R_path, rseqc_activate, rseqc_path,
+        #                                 os.path.join(cwd, infile),
+        #                                 os.path.join(cwd, "inner_distance" , bname),
+        #                                 args.bed,
+        #                                 #bname) ]
+        #                                 os.path.join(cwd, "inner_distance", bname+".inner_distance.summary.txt")),
+        #                     #"rm {}".format(os.path.join(cwd, infile)),
+        #                     ]
+        #             print jobs
+        #             q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
+        #         q.join()
+        #         if is_error:
+        #             exit(is_error)
+        #
+        #     for infile in infiles:
+        #         bname = re.sub(".inner_distance.summary.txt$","",os.path.basename(infile))
+        #         with open("inner_distance/{}.inner_distance.summary.txt".format(bname), "r") as f:
+        #             lines = f.readlines()
+        #             e = lines[1].split()
+        #             mate_inner_dist = "{:.0f}".format(float(e[1]))
+        #             std_dev = "{:.0f}".format(float(e[3]))
+        #         with open("{}.TopHat2.txt".format(bname), "w") as f:
+        #             f.write("mate_inner_dist\t{}\n".format(mate_inner_dist))
+        #             f.write("std_dev\t{}\n".format(std_dev))
 
     print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
@@ -1201,10 +1219,10 @@ def run_tophat(args, q, indir):
                 bname = re.sub("_R*[1|2].fastq.gz$","",os.path.basename(pair[0]))
 
                 ## read metrics from file
-                mate_inner_dist, mate_std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate-inner-dist", "mate-std-dev" )
+                mate_inner_dist, std_dev = get_my_vars( os.path.join(args.outdir, "distance_metrics", bname+".TopHat2.txt"), "mate_inner_dist", "std_dev" )
 
                 jobs = ["{} {} {}tophat2 {} --num-threads {} {} --library-type {} --mate-inner-dist {} --mate-std-dev {} --output-dir {} --transcriptome-index {} {} {} {}".format(
-                            bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, mate_inner_dist, mate_std_dev,
+                            bowtie2_export, samtools_export, tophat2_path, args.tophat_opts, args.threads, report_secondary_alignments, library_type, mate_inner_dist, std_dev,
                             os.path.join(cwd, bname), args.transcriptome_index, args.genome_index, pair[0], pair[1]),
                         "mv {bam_from} {bam_to}".format(bam_from=os.path.join(cwd, bname, "accepted_hits.bam"), bam_to=os.path.join(cwd, bname+".bam")),
                         "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname+".bam"))]
@@ -1429,6 +1447,117 @@ def run_star(args, q, indir):
         if is_error:
             exit(is_error)
 
+        print "Out:", os.path.join(args.outdir, outdir)
+    os.chdir(args.outdir)
+    return os.path.join(args.outdir, outdir)
+
+
+#### Novoalign ######################################################################################################
+
+def run_novoalign(args, q, indir):
+    """
+    Run Novoalign mapping.
+    """
+    analysis_name = "Novoalign"
+    args.analysis_counter += 1
+    outdir = "{}".format(analysis_name)
+    print "\n{} {}) {}".format(
+        datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'),
+        args.analysis_counter, analysis_name)
+    
+    if args.overwrite and os.path.isdir(outdir):
+        shutil.rmtree(outdir)
+    
+    if os.path.isdir(outdir):
+        print "Output folder already present: {}".format(outdir)
+    else:
+        os.mkdir(outdir)
+        os.chdir(outdir)
+        cwd = os.getcwd()
+        logfile = os.path.join(cwd, "LOG")
+        
+        print "In:", os.path.abspath(indir)
+        infiles = check_for_paired_infiles(args, indir, ".fastq.gz")
+        
+        with open(logfile, "w") as log:
+            log.write(
+                "Processing {} file(s) in parallel\n\n".format(args.parallel))
+            
+
+        ## read library type from file
+        library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "TopHat2" )
+        
+        if args.paired:
+            for pair in infiles:
+                bname = re.sub("_R*[1|2].fastq.gz$", "",
+                               os.path.basename(pair[0]))
+                
+                if not os.path.isdir(os.path.join(cwd, bname)):
+                    os.mkdir(os.path.join(cwd, bname))
+
+                ## read metrics from file
+                # insert_size, std_dev = get_my_vars(os.path.join(args.outdir, "distance_metrics", bname + ".TopHat2.txt"), "insert_size", "std_dev")
+                # library_type = get_my_vars( os.path.join(args.outdir, "library_type", "library_type.txt"), "Novoalign")
+
+                jobs = [
+                    "module load novoalign && {novoalign} -c {threads} {opts} -f {read1} {read2} -d {index} -o SAM 2> {summary} | {samtools} sort -@ {samtools_threads} -m {samtools_mem}G -T {tmp} -O bam - > {bam}" \
+                        .format(novoalign=os.path.join(novoalign_path, "novoalign"),
+                                threads=args.threads,
+                                opts=args.novoalign_opts,
+                                #paired_end_opts="{} {},{}".format(library_type, insert_size, std_dev),
+                                read1=pair[0],
+                                read2=pair[1],
+                                index=args.novoalign_index,
+                                summary=os.path.join(cwd,bname,"align_summary.txt"),
+                                samtools=os.path.join(samtools_path, "samtools"),
+                                samtools_threads=samtools_threads,
+                                samtools_mem=samtools_mem,
+                                tmp="tmp."+bname,
+                                bam=os.path.join(cwd, bname + ".bam")
+                                ),
+                    "{samtools} index {bam}" \
+                        .format(
+                        samtools=os.path.join(samtools_path, "samtools"),
+                        bam=os.path.join(cwd, bname + ".bam"))
+                    ]
+                
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True, keep_temp=False))
+        else:
+            for infile in infiles:
+                bname = re.sub(".fastq.gz$", "", os.path.basename(infile))
+                
+                if not os.path.isdir(os.path.join(cwd, bname)):
+                    os.mkdir(os.path.join(cwd, bname))
+                
+                jobs = [
+                    "module load novoalign && {novoalign} -c {threads} {opts} -f {read} -d {index} -o SAM 2> {summary} | {samtools} sort -@ {samtools_threads} -m {samtools_mem}G -T {tmp} -O bam - > {bam}" \
+                        .format(novoalign=os.path.join(novoalign_path, "novoalign"),
+                                threads=args.threads,
+                                opts=args.novoalign_opts,
+                                #paired_end_opts="{} {},{}".format(library_type, insert_size, std_dev),
+                                read=infile,
+                                index=args.novoalign_index,
+                                summary=os.path.join(cwd,bname,"align_summary.txt"),
+                                samtools=os.path.join(samtools_path, "samtools"),
+                                samtools_threads=samtools_threads,
+                                samtools_mem=samtools_mem,
+                                tmp="tmp."+bname,
+                                bam=os.path.join(cwd, bname + ".bam")
+                                ),
+                    "{samtools} index {bam}" \
+                        .format(
+                        samtools=os.path.join(samtools_path, "samtools"),
+                        bam=os.path.join(cwd, bname + ".bam"))
+                    ]
+                
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True, keep_temp=False))
+        print
+        q.join()
+        if is_error:
+            exit(is_error)
+        
         print "Out:", os.path.join(args.outdir, outdir)
     os.chdir(args.outdir)
     return os.path.join(args.outdir, outdir)
@@ -2126,7 +2255,7 @@ def main():
     except:
         pass
 
-    if args.paired and args.mapping_prg == 'TopHat2':
+    if args.paired and args.mapping_prg.startswith(("Novoalign","TopHat2")):
         ## Run strand_specificity
         t1 = datetime.datetime.now()
         run_distance_metrics(args, q, indir)
@@ -2153,6 +2282,11 @@ def main():
     elif args.mapping_prg == 'STAR':
         t1 = datetime.datetime.now()
         bam_dir = run_star(args, q, indir)
+        t2 = datetime.datetime.now()
+        print "Duration:", t2-t1
+    elif args.mapping_prg == 'Novoalign':
+        t1 = datetime.datetime.now()
+        bam_dir = run_novoalign(args, q, indir)
         t2 = datetime.datetime.now()
         print "Duration:", t2-t1
 
