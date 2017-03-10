@@ -648,27 +648,40 @@ def run_fastq_downsampling(args, q, indir, analysis_name="FASTQ_downsampling"):
         cwd = os.getcwd()
 
         print "In:", os.path.abspath(indir)
-        infiles = sorted([os.path.join(indir, f) for f in os.listdir(os.path.abspath(indir)) if f.endswith(".fastq.gz")])
+
+        infiles = check_for_paired_infiles(args, indir, ".fastq.gz", verbose=True)
 
         logfile = os.path.join(cwd, "LOG")
         with open(logfile, "w") as log:
             log.write("Processing {} file(s) in parallel\n\n".format(args.parallel))
 
-        for infile in infiles:
-            if not args.seed:
-                ##jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v --head -n {} {} {}".format(python_path, script_path, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
+        if args.paired:
+            for pair in infiles:
 
-                ## or:
+                jobs = ["{downsample} {n} {threads} {in1} {out1} {in2} {out2}"\
+                            .format(downsample=os.path.join(script_path, "rna-seq-qc", "tools", "downsample_se_pe.sh"),
+                                    n=args.fastq_downsample,
+                                    threads=args.threads,
+                                    in1=pair[0],
+                                    out1=os.path.join(cwd, os.path.basename(pair[0])),
+                                    in2=pair[1],
+                                    out2=os.path.join(cwd, os.path.basename(pair[1]))
+                                    )]
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True))
+        else:
+            for infile in infiles:
 
-                ## just from the head of the file using shell commands
-                jobs = ["zcat {} 2>/dev/null | head -n{} | gzip > {}".format(infile, 4*int(args.fastq_downsample), os.path.join(cwd, os.path.basename(infile)) ),]
-                ## Note that there is a not misleading "gzip: stdout: Broken pipe" message. The output is fine though!!!
-            else:
-                ## print "Using seed:", args.seed
-                jobs = ["{} {}rna-seq-qc/downsample_fastq.py -v -s {} -n {} {} {}".format(python_path, script_path, args.seed, args.fastq_downsample, infile, os.path.join(cwd, os.path.basename(infile)) ),]
-
-            q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True) )
-
+                jobs = ["{downsample} {n} {threads} {in1} {out1}"\
+                            .format(downsample=os.path.join(script_path, "rna-seq-qc", "tools", "downsample_se_pe.sh"),
+                                    n=args.fastq_downsample,
+                                    threads=args.threads,
+                                    in1=infile,
+                                    out1=os.path.join(cwd, os.path.basename(infile))
+                                    )]
+                q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True,
+                           backcopy=True))
+        
         q.join()
         if is_error:
             exit(is_error)
@@ -2101,106 +2114,106 @@ def main():
     t2 = datetime.datetime.now()
     print "Duration:", t2-t1
 
-    if not args.no_fastqc:
-        ## Run FastQC
-        t1 = datetime.datetime.now()
-        run_fastqc(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run Trim Galore!
-    if args.trim:
-        t1 = datetime.datetime.now()
-        indir = run_trim_galore(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run FastQC on trimmed reads
-    if args.trim and not args.no_fastqc:
-        ## Run FastQC
-        t1 = datetime.datetime.now()
-        run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run library_type
-    t1 = datetime.datetime.now()
-    run_library_type(args, q, indir)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
-    try:
-        args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
-    except:
-        pass
-
-    if args.paired and args.mapping_prg == 'TopHat2':
-        ## Run strand_specificity
-        t1 = datetime.datetime.now()
-        run_distance_metrics(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Stop here if requested by user (--no-bam)
-    if args.no_bam:
-        print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
-        print "Output stored in: {}\n".format(args.outdir)
-        exit(0)
-
-    ## Run TopHat
-    if args.mapping_prg == 'TopHat2':
-        t1 = datetime.datetime.now()
-        bam_dir = run_tophat(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-    elif args.mapping_prg == 'HISAT2':
-        t1 = datetime.datetime.now()
-        bam_dir = run_hisat2(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-    elif args.mapping_prg == 'STAR':
-        t1 = datetime.datetime.now()
-        bam_dir = run_star(args, q, indir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run htseq-count
-    t1 = datetime.datetime.now()
-    if args.count_prg == "featureCounts":
-        count_dir = run_featureCounts(args, q, bam_dir)
-    elif args.count_prg == "htseq-count":
-        count_dir = run_htseq_count(args, q, bam_dir)
-    else:
-        print "Error! Unknown feature counting program:", args.count_prg
-        exit(1)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
-
-    ## RUN bigwig file creation
-    if args.bw:
-        t1 = datetime.datetime.now()
-        run_bigWig(args, q, bam_dir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run DESeq2
-    if args.sample_info:
-        t1 = datetime.datetime.now()
-        run_deseq2(args, q, count_dir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
-
-    ## Run project_summary
-    t1 = datetime.datetime.now()
-    run_project_report(args, q)
-    t2 = datetime.datetime.now()
-    print "Duration:", t2-t1
-
-    ## Run RSeQC
-    if args.rseqc:
-        t1 = datetime.datetime.now()
-        run_rseqc(args, q, bam_dir)
-        t2 = datetime.datetime.now()
-        print "Duration:", t2-t1
+    # if not args.no_fastqc:
+    #     ## Run FastQC
+    #     t1 = datetime.datetime.now()
+    #     run_fastqc(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run Trim Galore!
+    # if args.trim:
+    #     t1 = datetime.datetime.now()
+    #     indir = run_trim_galore(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run FastQC on trimmed reads
+    # if args.trim and not args.no_fastqc:
+    #     ## Run FastQC
+    #     t1 = datetime.datetime.now()
+    #     run_fastqc(args, q, indir, analysis_name="FastQC_on_trimmed_reads")
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run library_type
+    # t1 = datetime.datetime.now()
+    # run_library_type(args, q, indir)
+    # t2 = datetime.datetime.now()
+    # print "Duration:", t2-t1
+    # try:
+    #     args.library_type = subprocess.check_output("head -n1 {} | cut -f2".format( os.path.join(args.outdir,"library_type", "library_type.txt") ), shell=True).strip()
+    # except:
+    #     pass
+    #
+    # if args.paired and args.mapping_prg == 'TopHat2':
+    #     ## Run strand_specificity
+    #     t1 = datetime.datetime.now()
+    #     run_distance_metrics(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Stop here if requested by user (--no-bam)
+    # if args.no_bam:
+    #     print "\nPipeline finished because of user option '--no-bam'! rna-seq-qc finished (runtime: {})".format(datetime.datetime.now().strftime('[%Y-%m-%d %H:%M:%S]'), datetime.datetime.now() - start)
+    #     print "Output stored in: {}\n".format(args.outdir)
+    #     exit(0)
+    #
+    # ## Run TopHat
+    # if args.mapping_prg == 'TopHat2':
+    #     t1 = datetime.datetime.now()
+    #     bam_dir = run_tophat(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    # elif args.mapping_prg == 'HISAT2':
+    #     t1 = datetime.datetime.now()
+    #     bam_dir = run_hisat2(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    # elif args.mapping_prg == 'STAR':
+    #     t1 = datetime.datetime.now()
+    #     bam_dir = run_star(args, q, indir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run htseq-count
+    # t1 = datetime.datetime.now()
+    # if args.count_prg == "featureCounts":
+    #     count_dir = run_featureCounts(args, q, bam_dir)
+    # elif args.count_prg == "htseq-count":
+    #     count_dir = run_htseq_count(args, q, bam_dir)
+    # else:
+    #     print "Error! Unknown feature counting program:", args.count_prg
+    #     exit(1)
+    # t2 = datetime.datetime.now()
+    # print "Duration:", t2-t1
+    #
+    # ## RUN bigwig file creation
+    # if args.bw:
+    #     t1 = datetime.datetime.now()
+    #     run_bigWig(args, q, bam_dir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run DESeq2
+    # if args.sample_info:
+    #     t1 = datetime.datetime.now()
+    #     run_deseq2(args, q, count_dir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
+    #
+    # ## Run project_summary
+    # t1 = datetime.datetime.now()
+    # run_project_report(args, q)
+    # t2 = datetime.datetime.now()
+    # print "Duration:", t2-t1
+    #
+    # ## Run RSeQC
+    # if args.rseqc:
+    #     t1 = datetime.datetime.now()
+    #     run_rseqc(args, q, bam_dir)
+    #     t2 = datetime.datetime.now()
+    #     print "Duration:", t2-t1
 
     return args.outdir
 
