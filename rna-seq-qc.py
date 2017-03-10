@@ -1407,7 +1407,7 @@ def run_star(args, q, indir):
                                     read2=pair[1],
                                     prefix=os.path.join(cwd, bname, bname+"."),
                                     ),
-                        "ln -s {bam} {link}"\
+                        "mv {bam} {link}"\
                             .format(bam=os.path.join(cwd, bname, bname+".Aligned.sortedByCoord.out.bam"),
                                     link=os.path.join(cwd, bname+".bam")),
                         "{samtools} index {bam}"\
@@ -1432,7 +1432,7 @@ def run_star(args, q, indir):
                                     read=infile,
                                     prefix=os.path.join(cwd, bname, bname+"."),
                                     ),
-                        "ln -s {bam} {link}"\
+                        "mv {bam} {link}"\
                             .format(bam=os.path.join(cwd, bname, bname+".Aligned.sortedByCoord.out.bam"),
                                     link=os.path.join(cwd, bname+".bam")),
                         "{samtools} index {bam}"\
