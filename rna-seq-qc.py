@@ -1299,7 +1299,7 @@ def run_hisat2(args, q, indir):
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam") ),
                         "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits.reheader.bam"), os.path.join(cwd, bname+".bam") ),
-                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")),
+                        "rm {} {}".format(os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam")),
                         "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname + ".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
@@ -1331,7 +1331,7 @@ def run_hisat2(args, q, indir):
                         "{}samtools reheader {} {} | {}samtools view -bS - > {}"\
                             .format(samtools_path, os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam"), samtools_path, os.path.join(cwd, bname+"/"+"accepted_hits2.bam") ),
                         "mv {} {}".format( os.path.join(cwd, bname+"/"+"accepted_hits2.bam"), os.path.join(cwd, bname+".bam") ),
-                        "rm {}".format(os.path.join(cwd, bname+"/"+"header.sam")),
+                        "rm {} {}".format(os.path.join(cwd, bname+"/"+"header.sam"), os.path.join(cwd, bname+"/"+"accepted_hits.bam")),
                         "{samtools} index {bam}".format(samtools=os.path.join(samtools_path, "samtools"), bam=os.path.join(cwd, bname + ".bam"))]
 
                 q.put(Qjob(jobs, cwd=cwd, logfile=logfile, shell=True, backcopy=True, keep_temp=False))
