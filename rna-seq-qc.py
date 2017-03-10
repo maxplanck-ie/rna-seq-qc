@@ -28,11 +28,11 @@ __description__ = """
     in front of the .fastq.gz extension (e.g. reads_R1.fastq.gz,
     reads_R2.fastq.gz). In addition, a specific genome version argument must be
     provided (e.g. -g mm10) to define the reference data used for annotation.
-    This loads a number of indexes for mapping programs (Bowtie2, TopHat2,
-    HISAT2, STAR (new!) etc.) from the corresponding configuration file of the
-    rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg). Additional genomes for
-    selection can be provided as cfg-files by the user. The pipeline works for
-    single end and paired end sequences alike.
+    This loads a number of indexes for mapping programs (STAR (new!), Novoalign
+    (new!), TopHat2, HISAT2, etc.) from the corresponding configuration file of
+    the rna-seq-qc sub-folder (e.g. rna-seq-qc/mm10.cfg). Additional genomes
+    for selection can be provided as cfg-files by the user. The pipeline works
+    for single end and paired end sequences alike.
 
     The DE analysis is only executed if a valid setup table is provided (e.g.
     --DE sampleInfo.tsv), which defines the relationships of the samples.
@@ -192,7 +192,7 @@ def parse_args():
     parser.add_argument("--trim", dest="trim", action="store_true", default=False, help="Activate trimming of fastq reads (default: no trimming)")
     parser.add_argument("--trim_galore_opts", dest="trim_galore_opts", metavar="STR", help="Trim Galore! option string. The option '--paired' is always used for paired-end data. (default: '%(default)s')", type=str, default="--stringency 2")
     parser.add_argument("--no-bam", dest="no_bam", action="store_true", default=False, help="First steps only. No alignment. No BAM file.")
-    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: STAR, TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="STAR")
+    parser.add_argument("--mapping-prg", dest="mapping_prg", metavar="STR", help="Program used for mapping: STAR, Novoalign, TopHat2 or HISAT2 (default: '%(default)s')", type=str, default="STAR")
     parser.add_argument("--tophat_opts", dest="tophat_opts", metavar="STR", help="TopHat2 option string (default: '%(default)s')", type=str, default="")     #--library-type fr-firststrand
     parser.add_argument("--star_opts", dest="star_opts", metavar="STR", help="STAR option string, e.g.: '--twopassMode Basic' (default: '%(default)s')", type=str, default="")
     parser.add_argument("--novoalign_opts", dest="novoalign_opts", metavar="STR", help="Novoalign option string, e.g.: '' (default: '%(default)s')", type=str, default="-k -r A 20")
