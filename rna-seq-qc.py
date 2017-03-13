@@ -258,6 +258,7 @@ def parse_args():
         args.novoalign_index = configs["novoalign_index"]
         args.gtf = configs["gtf"]
         args.bed = configs["bed"]
+        args.known_splicesite_infile = configs["known_splicesite_infile"]
     except:
         print "Error! Unable to read paths from config file:", ref_cfg_file_path
         exit(1)
@@ -1297,8 +1298,9 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -1 {} -2 {} --known-splicesite-infile {} --novel-splicesite-outfile {} --un-conc-gz {} --al-conc-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, pair[0], pair[1],
+                                    args.known_splicesite_infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un-conc.fastq.gz"),        # --un-conc
                                     os.path.join(cwd, bname+"/"+"al-conc.fastq.gz"),        # --al-conc
@@ -1329,8 +1331,9 @@ def run_hisat2(args, q, indir):
                 if not os.path.isdir( os.path.join(cwd, bname) ):
                     os.mkdir( os.path.join(cwd, bname) )
 
-                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
+                cmdl = "{}hisat2 {} -p {} -x {} {} -U {} --known-splicesite-infile {} --novel-splicesite-outfile {} --un-gz {} --al-gz {} --met-file {} 2> {} | {}samtools view {} -Sb - | {}samtools sort -@ {} -m {}G - {}"\
                             .format(hisat_path, args.hisat_opts, args.threads, args.hisat_index, library_type, infile,
+                                    args.known_splicesite_infile,
                                     os.path.join(cwd, bname+"/"+"splice_sites.txt"),
                                     os.path.join(cwd, bname+"/"+"un.fastq.gz"),         # --un
                                     os.path.join(cwd, bname+"/"+"al.fastq.gz"),         # --al
